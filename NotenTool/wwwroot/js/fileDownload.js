@@ -1,14 +1,15 @@
-window.downloadFile = function(dataArray, fileName) {
-    // dataArray kommt als Uint8Array von .NET
-    var blob = new Blob([dataArray], { type: 'application/octet-stream' });
-    var link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.download = fileName;
-    link.click();
+window.downloadFile = function (dataArray, fileName) {
 
-    // Cleanup - wichtig für Speicher
-    window.URL.revokeObjectURL(link.href);
+    const blob = new Blob([dataArray], { type: 'application/octet-stream' });
+
+    if (window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveOrOpenBlob(blob, fileName);
+    } else {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url); // iOS Workaround
+    }
 };
+
 window.pickFile = async (accept) => {
     return new Promise((resolve, reject) => {
         const input = document.createElement('input');
