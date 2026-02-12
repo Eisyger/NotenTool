@@ -14,32 +14,9 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
-# Visual Studio / Rider cache
-.vs/
-.vscode/
-.idea/
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-/_ReSharper.Caches/
-*.DotSettings.user
-riderModule.iml
 
-# NuGet
 *.nupkg
 *.snupkg
-**/packages/*
-!**/packages/build/
-*.nuget.props
-*.nuget.targets
 
-# Test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
-
-# Others
-*.cache
-*.log
-*.tmp
-*.temp
