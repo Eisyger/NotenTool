@@ -1,0 +1,84 @@
+@page "/details"
+@inject JsHelper Js
+
+<div class="container my-4">
+<div class="accordion" id="detailsAccordion">
+        
+    <!-- Prüfungen -->
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button @(_openPanel == 1 ? "" : "collapsed")"
+                    type="button"
+                    @onclick="() => TogglePanel(1)">
+                <div class="fw-semibold mb-1">Prüfungen</div>
+            </button>
+        </h2>
+        <div id="collapsePruefungen" class="accordion-collapse collapse @(_openPanel == 1 ? "show" : "")">
+            <div class="accordion-body p-0">
+                <ul class="list-group list-group-flush">
+                    @{
+                        int examIndex = 1;
+                    }
+                    @foreach (var exam in _currentCourse?.Exams ?? [])
+                    {
+                        <li class="list-group-item">
+                            <div class="text-black small">@examIndex. @exam.Name</div>
+                            <div class="text-muted small">@exam.Description</div>
+                        </li>
+                        examIndex++;
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<div class="container my-4">
+    <div class="accordion">
+        <!-- Teilnehmer -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingTeilnehmer">
+                <button class="accordion-button @(_openPanel == 3 ? "" : "collapsed")" 
+                        type="button" 
+                        @onclick="() => TogglePanel(3)">
+                    <div class="fw-semibold mb-1">Teilnehmer</div>
+                </button>
+            </h2>
+            <div id="collapseTeilnehmer" class="accordion-collapse collapse @(_openPanel == 3 ? "show" : "")">
+                <div class="accordion-body p-0">
+                    <ul class="list-group list-group-flush">
+                        @{
+                            int studentIndex = 1;
+                        }
+                        @foreach (var student in _currentCourse?.Students ?? [])
+                        {
+                            <li class="list-group-item">
+                                <div class="text-black small">@studentIndex. @student.FirstName @student.LastName</div>
+                                <div class="text-muted small mt-1">
+                                    <span class="me-3">@student.Club</span>
+                                    <span>@student.DateOfBirth.ToString("dd.MM.yyyy")</span>
+                                </div>
+                            </li>
+                            studentIndex++;
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Course? _currentCourse;
+    private int _openPanel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentCourse = await Js.GetItemFromLocalStorageAsync<Course>();
+    }
+
+    private void TogglePanel(int panelNumber)
+    {
+        _openPanel = _openPanel == panelNumber ? 0 : panelNumber;
+    }
+}

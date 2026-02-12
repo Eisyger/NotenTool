@@ -1,0 +1,184 @@
+@page "/import"
+@inject ExcelTemplateExportService ExcelTemplateExportService
+@inject ExcelParseService ExcelParseService
+@inject JsHelper Js
+
+<div class="container my-4">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            @if (_currentCourse != null)
+            {
+                <div class="mt-1">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Importierte Daten</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center mb-3">
+                                <div class="col-4">
+                                    <div class="fs-3 fw-bold text-primary">@_currentCourse.Students.Count</div>
+                                    <small class="text-muted">Teilnehmer</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fs-3 fw-bold text-success">@_currentCourse.Exams.Count</div>
+                                    <small class="text-muted">Prüfungen</small>
+                                </div>
+                            </div>
+                
+                            <hr>
+                
+                            <div class="small text-muted">
+                                <div><strong>Datei:</strong> @_currentCourse.MetaData.FileName</div>
+                                <div><strong>Upload:</strong> @_currentCourse.MetaData.UploadDate.ToString("dd.MM.yyyy HH:mm") Uhr</div>
+                                <div><strong>Stand:</strong> @_currentCourse.MetaData.LastModifiedDate.ToString("dd.MM.yyyy HH:mm") Uhr</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            
+            @if (!string.IsNullOrEmpty(_uploadMessage))
+            {
+                <div class="alert alert-@(_uploadSuccess ? "success" : "danger") mt-3 mb-0" role="alert">
+                    <i class="bi bi-@(_uploadSuccess ? "check-circle" : "exclamation-triangle") me-2"></i>
+                    @_uploadMessage
+                </div>
+            }
+            <div class="mt-4">
+                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+                    <div>
+                        <h5 class="card-title mb-2">Lehrgangsdaten laden</h5>
+                        <p class="text-muted small mb-0">Excel-Datei hochladen.</p>
+                    </div>
+                    <button class="btn btn-success px-4" @onclick="UploadTemplate" disabled="@_isUploading">
+                        @if (_isUploading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span>Verarbeite...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-upload me-2"></i>
+                            <span>Hochladen</span>
+                        }
+                    </button>
+                </div>
+                </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-4">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+                <div>
+                    <h5 class="card-title mb-2">Vorlage herunterladen</h5>
+                    <p class="text-muted small mb-0">Excel-Vorlage downloaden.</p>
+                </div>
+                <button class="btn btn-primary px-4" @onclick="DownloadTemplate" disabled="@_isDownloading">
+                    @if (_isDownloading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-download me-2"></i>
+                    }
+                    Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _isDownloading;
+    private bool _isUploading;
+    private string _uploadMessage = string.Empty;
+    private bool _uploadSuccess;
+    private Course? _currentCourse;
+    
+    private string _fileName = string.Empty;
+    private DateTime _lastModifiedDate;
+    private DateTime _uploadDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentCourse = await Js.GetItemFromLocalStorageAsync<Course>();
+    }
+
+    private async Task UploadTemplate()
+    {
+        _isUploading = true;
+        _uploadMessage = string.Empty;
+        _uploadSuccess = false;
+        _currentCourse = null;
+        
+        try
+        {
+            var filePickerResult = await Js.PickFileAsync();
+            
+            if (filePickerResult is null || filePickerResult.GetBytes().Length == 0)
+            {
+                _uploadMessage = "Keine Datei ausgewählt.";
+                _uploadSuccess = false;
+                return;
+            }
+            
+            var fileBytes = filePickerResult.GetBytes();
+            _fileName = filePickerResult.FileName;
+            _lastModifiedDate = filePickerResult.LastModifiedDate;
+            _uploadDate = filePickerResult.UploadDate;
+            
+            using var memoryStream = new MemoryStream(fileBytes);
+            _currentCourse = await ExcelParseService.ParseTemplate(memoryStream);
+            _currentCourse.MetaData = new CourseMetaData()
+            {
+                FileName = _fileName,
+                LastModifiedDate = _lastModifiedDate,
+                UploadDate = _uploadDate
+            };
+            
+            _uploadMessage = "Datei erfolgreich hochgeladen und verarbeitet!";
+            _uploadSuccess = true;
+
+            await Js.ClearLocalStorageAsync();
+            await Js.SetItemToLocalStorageAsync(_currentCourse);
+           
+            Console.WriteLine($"Importiert: {_currentCourse.Students.Count} Teilnehmer, " +
+                            $"{_currentCourse.Exams.Count} Prüfungen");
+        }
+        catch (Exception ex)
+        {
+            _uploadMessage = $"Fehler beim Verarbeiten der Datei: {ex.Message}";
+            _uploadSuccess = false;
+            Console.WriteLine($"Error: {ex}");
+        }
+        finally
+        {
+            _isUploading = false;
+        }
+    }
+    
+    private async Task DownloadTemplate()
+    {
+        Console.WriteLine("Download gestartet!");
+        _isDownloading = true;
+        try
+        {
+            var fileBytes = ExcelTemplateExportService.GenerateTemplate();
+            var fileName = $"Prüfungs-Vorlage_{DateTime.Now:yyyy-MM-dd}.xlsx";
+            
+            await Js.DownloadFileAsync(fileBytes, fileName);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            _isDownloading = false;
+        }
+    }
+}

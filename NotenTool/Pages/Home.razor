@@ -1,0 +1,476 @@
+﻿@page "/"
+@inject JsHelper Js
+@inject RandomService Rnd
+
+<PageTitle>Home</PageTitle>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow">
+                <div class="card-body p-4">
+                    <h4 class="card-title mb-4">
+                        <i class="bi bi-clipboard-check text-primary me-2"></i>
+                        Prüfungsauswahl
+                    </h4>
+
+                    <select class="form-select form-select-lg mb-3" @bind="_currentExamId" @bind:after="OnExamChanged">
+                        <option value="">Wähle eine Prüfung aus...</option>
+                        @foreach (var exam in _currentCourse?.Exams ?? [])
+                        {
+                        <option value="@exam.Id">@exam.Name</option>
+                        }
+                    </select>
+
+                    @if (CurrentExam != null)
+                    {
+                    <div class="card bg-light border-0 mt-3">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-3"
+                                     style="width: 40px; height: 40px;">
+                                    <i class="bi bi-check-lg"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Ausgewählte Prüfung</small>
+                                    <strong class="fs-5">@CurrentExam.Name</strong>
+                                    <p class="text-muted d-block mb-0">@CurrentExam.Description</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_shuffledStudents?.Any() == true && CurrentExam is not null)
+    {
+    <div class="row justify-content-center mt-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow">
+                <div class="card-body p-4">
+                    <h4 class="card-title mb-4">
+                        <i class="bi bi-people text-primary me-2"></i>
+                        Teilnehmerauswahl
+                    </h4>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th class="text-end">Note</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @{
+                            int index = 1;
+                            }
+                            @foreach (var student in _shuffledStudents)
+                            {
+                            var grade = GetGrade(student.Id);
+                            var rowClass = GetRowClass(student.Id, grade);
+
+                            <tr @onclick="() => SelectStudent(student.Id.ToString())"
+                                class="@rowClass cursor-pointer"
+                                style="cursor: pointer;">
+                                <td class="text-muted">@index</td>
+                                <td>
+                                    @if (IsStudentSelected(student.Id.ToString()))
+                                    {
+                                    <i class="bi bi-check-circle-fill text-primary me-2"></i>
+                                    }
+                                    <strong>@student.FirstName @student.LastName</strong>
+                                </td>
+                                <td class="text-end">
+                                    @if (grade.HasValue && grade.Value > 0)
+                                    {
+                                    <span class="badge @GetBadgeClass(grade.Value) fs-6">
+                                                        @grade.Value.ToString("0.0")@GetTendency(student.Id)
+                                                    </span>
+                                    }
+                                    else
+                                    {
+                                    <span class="text-muted">-</span>
+                                    }
+                                </td>
+                            </tr>
+                            index++;
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+</div>
+
+<!-- Modal für Notenbearbeitung -->
+@if (_showGradeModal && CurrentStudent != null)
+{
+<div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square me-2"></i>
+                    Note vergeben
+                    <small class="text-muted d-block mt-1">
+                        @CurrentExam?.Name
+                    </small>
+                </h5>
+                <button type="button" class="btn-close" @onclick="CloseModal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert mb-3 @(_gradeSaved ? "alert-saved" : "")" style="background: @(_gradeSaved ? "honeydew" : "white"); border: 1px solid #dee2e6; transition: background-color 0.3s ease;">
+                    <h4><strong>@CurrentStudent.FirstName @CurrentStudent.LastName</strong></h4>
+                    <small class="text-black d-block">
+                        @CurrentStudent.Club
+                    </small>
+                    <small class="text-muted d-block">
+                        Position: @(_currentStudentIndex + 1) / @_shuffledStudents?.Count
+                    </small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold d-block mb-3">
+                        @if (_currentGrade > 0)
+                        {
+                        <span>Note:
+                                <span class="badge @GetBadgeClass(_currentGrade) fs-5 ms-2">
+                                    @_currentGrade.ToString("0.0")@(!string.IsNullOrEmpty(_currentTendency) ? _currentTendency : "")
+                                </span>
+                            </span>
+                        }
+                        else
+                        {
+                        <span class="text-muted">Noch keine Note vergeben</span>
+                        }
+                    </label>
+
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        @foreach (var grade in new[] { 1.0f, 1.5f, 2.0f, 2.5f, 3.0f, 3.5f, 4.0f, 4.5f, 5.0f, 5.5f, 6.0f })
+                        {
+                        <button class="btn @(_currentGrade == grade ? "btn-primary" : "btn-outline-secondary")"
+                                @onclick="() => { _currentGrade = grade; _gradeSaved = false; }">
+                            @grade.ToString("0.0")
+                        </button>
+                        }
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button class="btn @(_currentTendency == "+" ? "btn-success" : "btn-outline-success")"
+                                @onclick='() => ToggleTendency("+")'>
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                        <button class="btn @(_currentTendency == "-" ? "btn-warning" : "btn-outline-warning")"
+                                @onclick='() => ToggleTendency("-")'>
+                            <i class="bi bi-dash-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn btn-outline-secondary w-100 mb-2" @onclick="ToggleComment">
+                    <i class="bi bi-chat-left-text me-2"></i>
+                    @(_showCommentField ? "Bemerkung ausblenden" : "Bemerkung hinzufügen")
+                </button>
+
+                @if (_showCommentField)
+                {
+                <div class="mb-3">
+                            <textarea class="form-control"
+                                      rows="3"
+                                      placeholder="Bemerkung zur Note..."
+                                      @bind="_currentComment"
+                                      @oninput="() => _gradeSaved = false"></textarea>
+                </div>
+                }
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <button class="btn btn-outline-secondary"
+                        @onclick="NavigatePrevious"
+                        disabled="@(_currentStudentIndex == 0)">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Vorheriger
+                </button>
+
+                @if (_showSaveAnimation)
+                {
+                <span class="badge bg-success fs-6 save-animation">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        Gespeichert
+                    </span>
+                }
+                else if (_currentGrade > 0)
+                {
+                <button class="btn btn-success" @onclick="SaveGrade">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Speichern
+                </button>
+                }
+                else
+                {
+                <button class="btn btn-success" disabled>
+                    <i class="bi bi-check-circle me-2"></i>
+                    Speichern
+                </button>
+                }
+
+                <button class="btn btn-outline-primary"
+                        @onclick="NavigateNext">
+                    Nächster
+                    <i class="bi bi-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+@code {
+private Course? _currentCourse;
+private List<ExamResult> _examResults = [];
+
+private string? _currentExamId;
+private string? _currentStudentId;
+private List<Student>? _shuffledStudents;
+
+private float _currentGrade = 0f;
+private string _currentTendency = string.Empty;
+private string _currentComment = string.Empty;
+private bool _showCommentField;
+private bool _showGradeModal;
+private int _currentStudentIndex;
+private bool _gradeSaved;
+private bool _showSaveAnimation;
+
+private Student? CurrentStudent =>
+_currentCourse?.Students.FirstOrDefault(s => s.Id.ToString() == _currentStudentId);
+
+private Exam? CurrentExam =>
+_currentCourse?.Exams.FirstOrDefault(e => e.Id.ToString() == _currentExamId);
+
+protected override async Task OnInitializedAsync()
+{
+_currentCourse = await Js.GetItemFromLocalStorageAsync<Course>();
+
+if(_currentCourse is null)
+return;
+
+_examResults = await Js.GetItemFromLocalStorageAsync<List<ExamResult>>(_currentCourse.MetaData.FileName) ?? [];
+}
+
+private void OnExamChanged()
+{
+if (CurrentExam != null && _currentCourse?.Students != null)
+{
+string seed = CurrentExam.Name + CurrentExam.Description;
+_shuffledStudents = Rnd.Shuffle(_currentCourse.Students.ToList(), seed);
+
+_currentStudentId = null;
+_showGradeModal = false;
+}
+else
+{
+_shuffledStudents = null;
+_currentStudentId = null;
+_showGradeModal = false;
+}
+}
+
+private void SelectStudent(string studentId)
+{
+_currentStudentId = studentId;
+_currentStudentIndex = _shuffledStudents?.FindIndex(s => s.Id.ToString() == studentId) ?? 0;
+
+// Lade existierende Note und Bemerkungen, falls vorhanden
+LoadStudentGrade();
+
+_showGradeModal = true;
+}
+
+private void LoadStudentGrade()
+{
+if (CurrentStudent == null || CurrentExam == null) return;
+
+var existingResult = _examResults.FirstOrDefault(r =>
+r.Exam.Id == CurrentExam.Id &&
+r.Student.Id == CurrentStudent.Id);
+
+_currentGrade = existingResult?.Grade ?? 0f;
+_currentTendency = existingResult?.Tendency ?? string.Empty;
+_currentComment = existingResult?.Comment ?? string.Empty;
+_showCommentField = !string.IsNullOrEmpty(_currentComment);
+
+// Prüfe, ob Note bereits gespeichert ist
+_gradeSaved = existingResult != null && existingResult.Grade > 0;
+_showSaveAnimation = false;
+}
+
+private void NavigatePrevious()
+{
+if (_currentStudentIndex > 0)
+{
+_currentStudentIndex--;
+_currentStudentId = _shuffledStudents![_currentStudentIndex].Id.ToString();
+LoadStudentGrade();
+}
+}
+
+private void NavigateNext()
+{
+if (_shuffledStudents != null && _currentStudentIndex < _shuffledStudents.Count - 1)
+{
+_currentStudentIndex++;
+_currentStudentId = _shuffledStudents[_currentStudentIndex].Id.ToString();
+LoadStudentGrade();
+}
+}
+
+private void CloseModal()
+{
+_showGradeModal = false;
+_currentStudentId = null;
+}
+
+private bool IsStudentSelected(string studentId)
+{
+return _currentStudentId == studentId;
+}
+
+private float? GetGrade(Guid studentId)
+{
+var examResult = _examResults.FirstOrDefault(r =>
+r.Exam.Id == CurrentExam?.Id &&
+r.Student.Id == studentId);
+return examResult?.Grade;
+}
+
+private string GetTendency(Guid studentId)
+{
+var examResult = _examResults.FirstOrDefault(r =>
+r.Exam.Id == CurrentExam?.Id &&
+r.Student.Id == studentId);
+return examResult?.Tendency ?? string.Empty;
+}
+
+private void ToggleComment()
+{
+_showCommentField = !_showCommentField;
+}
+
+private void ToggleTendency(string tendency)
+{
+// Toggle: Wenn die gleiche Tendenz angeklickt wird, deaktiviere sie
+_currentTendency = _currentTendency == tendency ? string.Empty : tendency;
+_gradeSaved = false;
+}
+
+private async Task SaveGrade()
+{
+if (CurrentStudent == null || CurrentExam == null || _currentGrade == 0) return;
+
+// Suche existierendes Result
+var existingResult = _examResults.FirstOrDefault(r =>
+r.Exam.Id == CurrentExam.Id &&
+r.Student.Id == CurrentStudent.Id);
+
+if (existingResult != null)
+{
+// Update
+existingResult.Grade = _currentGrade;
+existingResult.Tendency = _currentTendency;
+existingResult.Comment = _currentComment;
+}
+else
+{
+// Neu erstellen
+_examResults.Add(new ExamResult(CurrentExam, CurrentStudent, _currentGrade)
+{
+Tendency = _currentTendency,
+Comment = _currentComment
+});
+}
+
+_gradeSaved = true;
+_showSaveAnimation = true;
+
+await UpdateStorage();
+StateHasChanged();
+
+// Animation nach 2 Sekunden ausblenden
+await Task.Delay(2000);
+_showSaveAnimation = false;
+StateHasChanged();
+}
+
+private async Task UpdateStorage()
+{
+if(_currentCourse is null)
+return;
+await Js.SetItemToLocalStorageAsync(_examResults, _currentCourse.MetaData.FileName);
+}
+
+private string GetRowClass(Guid studentId, float? grade)
+{
+var baseClass = IsStudentSelected(studentId.ToString()) ? "table-primary" : "";
+
+if (!grade.HasValue || grade.Value == 0) return baseClass;
+
+if (grade.Value > 4.5f)
+return $"{baseClass} table-danger";
+else
+return $"{baseClass} table-success";
+}
+
+private string GetBadgeClass(float grade)
+{
+return grade > 4.5f ? "bg-danger" : "bg-success";
+}
+}
+
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+
+    @@keyframes saveSuccess {
+        0% {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .save-animation {
+        animation: saveSuccess 0.5s ease-out;
+    }
+
+    .alert-saved {
+        animation: backgroundFade 0.5s ease-in;
+    }
+
+    @@keyframes backgroundFade {
+        0% {
+            background-color: white;
+        }
+        100% {
+            background-color: honeydew;
+        }
+    }
+</style>

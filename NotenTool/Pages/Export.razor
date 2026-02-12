@@ -1,0 +1,179 @@
+@page "/export"
+@inject ExcelGradesExportService Exporter
+@inject JsHelper Js
+@inject IJSRuntime JsRuntime
+
+<div class="container my-4">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+                <div>
+                    <h5 class="card-title mb-2">Exportiere Noten</h5>
+                    <p class="text-muted small mb-0">Speichert die Noten in einer Excel zur weiteren Verwendung.</p>
+                </div>
+                <button class="btn btn-primary px-4" @onclick="OpenExaminerModal">
+                    <i class="bi bi-download me-2"></i>
+                    Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal für Prüfername -->
+@if (_showExaminerModal)
+{
+<div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-badge me-2"></i>
+                    Prüferdaten
+                </h5>
+                <button type="button" class="btn-close" @onclick="CloseExaminerModal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Bitte geben Sie Ihren Namen als Prüfer ein, bevor Sie die Noten exportieren.
+                </div>
+
+                <div class="mb-3">
+                    <label for="examinerName" class="form-label fw-semibold">
+                        Name des Prüfers <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" 
+                           class="form-control form-control-lg" 
+                           id="examinerName"
+                           placeholder="z.B. Max Mustermann"
+                           @bind="_examinerName"
+                           @bind:event="oninput"
+                           @onkeypress="HandleKeyPress" />
+                    @if (_showValidation && string.IsNullOrWhiteSpace(_examinerName))
+                    {
+                        <div class="text-danger small mt-1">
+                            <i class="bi bi-exclamation-circle me-1"></i>
+                            Bitte geben Sie einen Namen ein.
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" @onclick="CloseExaminerModal">
+                    <i class="bi bi-x-lg me-2"></i>
+                    Abbrechen
+                </button>
+                <button type="button" 
+                        class="btn btn-success" 
+                        @onclick="DownloadGrades"
+                        disabled="@_isDownloading">
+                    @if (_isDownloading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        <span>Wird erstellt...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-download me-2"></i>
+                        <span>Download starten</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+@code {
+    private Course? _currentCourse;
+    private List<ExamResult> _examResults = [];
+    
+    private bool _isDownloading;
+    private bool _showExaminerModal;
+    private string _examinerName = string.Empty;
+    private bool _showValidation;
+
+    protected override async Task OnInitializedAsync()
+    {
+       
+        _currentCourse = await Js.GetItemFromLocalStorageAsync<Course>();
+
+        if(_currentCourse is null)
+            return;
+
+        _examResults = await Js.GetItemFromLocalStorageAsync<List<ExamResult>>(_currentCourse.MetaData.FileName) ?? [];
+    }
+
+    private void OpenExaminerModal()
+    {
+        _showExaminerModal = true;
+        _showValidation = false;
+        _examinerName = string.Empty;
+    }
+
+    private void CloseExaminerModal()
+    {
+        _showExaminerModal = false;
+        _showValidation = false;
+        _examinerName = string.Empty;
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_examinerName))
+        {
+            await DownloadGrades();
+        }
+    }
+
+    private async Task DownloadGrades()
+    {
+        Console.WriteLine($"Course null? {_currentCourse is null}");
+        Console.WriteLine($"ExamResults count: {_examResults.Count}");
+
+        // Validierung
+        if (string.IsNullOrWhiteSpace(_examinerName))
+        {
+            _showValidation = true;
+            StateHasChanged();
+            return;
+        }
+
+        if (_currentCourse is null || !_examResults.Any())
+        {
+            return;
+        }
+
+        _isDownloading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Generiere Excel-Datei
+            var excelBytes = Exporter.GetExcelFile(_currentCourse, _examResults, _examinerName);
+
+            // Download
+            var fileName = $"Noten-{_examinerName + "-" + _currentCourse.MetaData.FileName}.xlsx";
+            await Js.DownloadFileAsync(excelBytes, fileName);
+
+            // Schließe Modal nach erfolgreichem Download
+            CloseExaminerModal();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fehler beim Export: {ex.Message}");
+        }
+        finally
+        {
+            _isDownloading = false;
+            StateHasChanged();
+        }
+    }
+}
+
+<style>
+    .modal.show {
+        display: block;
+    }
+</style>
