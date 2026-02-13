@@ -1,14 +1,44 @@
-window.downloadFile = function (dataArray, fileName) {
+window.downloadFile = function (dataArray, fileName, mimeType) {
 
-    const blob = new Blob([dataArray], { type: 'application/octet-stream' });
+    mimeType = mimeType || "application/octet-stream";
 
-    if (window.navigator.msSaveOrOpenBlob) {
-        window.navigator.msSaveOrOpenBlob(blob, fileName);
-    } else {
-        const url = window.URL.createObjectURL(blob);
-        window.open(url); // iOS Workaround
+    const blob = new Blob([dataArray], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+
+    const isIOS =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);    
+  
+
+    if (isIOS) {
+        // iOS: download-Attribut wird oft ignoriert
+        // Öffne im neuen Tab → User speichert manuell
+        window.open(url, "_blank");
+
+        // länger warten, sonst bricht iOS ab
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+        }, 5000);
+
+        return;
     }
+
+    // Desktop + Android
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    link.style.display = "none";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+    }, 1000);
 };
+
+
 
 window.pickFile = async (accept) => {
     return new Promise((resolve, reject) => {

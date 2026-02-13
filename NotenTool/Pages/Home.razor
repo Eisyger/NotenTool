@@ -139,11 +139,11 @@
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold d-block mb-3">
-                        @if (_currentGrade > 0)
+                        @if (_currentStudentGrade > 0)
                         {
                         <span>Note:
-                                <span class="badge @GetBadgeClass(_currentGrade) fs-5 ms-2">
-                                    @_currentGrade.ToString("0.0")@(!string.IsNullOrEmpty(_currentTendency) ? _currentTendency : "")
+                                <span class="badge @GetBadgeClass(_currentStudentGrade) fs-5 ms-2">
+                                    @_currentStudentGrade.ToString("0.0")@(!string.IsNullOrEmpty(_currentStudentTendency) ? _currentStudentTendency : "")
                                 </span>
                             </span>
                         }
@@ -199,14 +199,8 @@
                     Vorheriger
                 </button>
 
-                @if (_showSaveAnimation)
-                {
-                <span class="badge bg-success fs-6 save-animation">
-                        <i class="bi bi-check-circle-fill me-2"></i>
-                        Gespeichert
-                    </span>
-                }
-                else if (_currentGrade > 0)
+               
+                @if (_currentGrade > 0)
                 {
                 <button class="btn btn-success" @onclick="SaveGrade">
                     <i class="bi bi-check-circle me-2"></i>
@@ -241,14 +235,14 @@ private string? _currentStudentId;
 private List<Student>? _shuffledStudents;
 
 private float _currentGrade = 0f;
+private float _currentStudentGrade = 0.0f;
 private string _currentTendency = string.Empty;
+private string _currentStudentTendency = string.Empty;
 private string _currentComment = string.Empty;
 private bool _showCommentField;
 private bool _showGradeModal;
 private int _currentStudentIndex;
 private bool _gradeSaved;
-private bool _showSaveAnimation;
-
 private Student? CurrentStudent =>
 _currentCourse?.Students.FirstOrDefault(s => s.Id.ToString() == _currentStudentId);
 
@@ -302,28 +296,31 @@ var existingResult = _examResults.FirstOrDefault(r =>
 r.Exam.Id == CurrentExam.Id &&
 r.Student.Id == CurrentStudent.Id);
 
-_currentGrade = existingResult?.Grade ?? 0f;
-_currentTendency = existingResult?.Tendency ?? string.Empty;
+_currentStudentGrade = existingResult?.Grade ?? 0f;
+_currentStudentTendency = existingResult?.Tendency ?? string.Empty;
 _currentComment = existingResult?.Comment ?? string.Empty;
 _showCommentField = !string.IsNullOrEmpty(_currentComment);
 
 // Prüfe, ob Note bereits gespeichert ist
 _gradeSaved = existingResult != null && existingResult.Grade > 0;
-_showSaveAnimation = false;
+
 }
 
-private void NavigatePrevious()
+private async Task NavigatePrevious()
 {
+    await SaveGrade();
 if (_currentStudentIndex > 0)
 {
 _currentStudentIndex--;
 _currentStudentId = _shuffledStudents![_currentStudentIndex].Id.ToString();
+
 LoadStudentGrade();
 }
 }
 
-private void NavigateNext()
+private async Task NavigateNext()
 {
+    await SaveGrade();
 if (_shuffledStudents != null && _currentStudentIndex < _shuffledStudents.Count - 1)
 {
 _currentStudentIndex++;
@@ -398,14 +395,13 @@ Comment = _currentComment
 }
 
 _gradeSaved = true;
-_showSaveAnimation = true;
+_currentStudentGrade = _currentGrade;
+_currentStudentTendency = _currentTendency;
+_currentGrade = 0;
+_currentTendency = string.Empty;
+
 
 await UpdateStorage();
-StateHasChanged();
-
-// Animation nach 2 Sekunden ausblenden
-await Task.Delay(2000);
-_showSaveAnimation = false;
 StateHasChanged();
 }
 
