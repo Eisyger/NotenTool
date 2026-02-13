@@ -9,7 +9,7 @@ public class JsHelper(IJSRuntime js)
 {
     public async Task DownloadFileAsync(byte[] data, string fileName)
     {
-        await js.InvokeVoidAsync("downloadFile", data, fileName);
+        await js.InvokeVoidAsync("downloadFile", data, fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
     
     public async Task<FilePickerResult?> PickFileAsync(string accept = ".xlsx")

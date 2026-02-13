@@ -1,24 +1,24 @@
 window.downloadFile = function (dataArray, fileName, mimeType) {
 
-    mimeType = mimeType || "application/octet-stream";
+    if (!mimeType) {
+        mimeType = "application/octet-stream";
+    }
 
     const blob = new Blob([dataArray], { type: mimeType });
     const url = window.URL.createObjectURL(blob);
 
     const isIOS =
         /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);    
-  
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
     if (isIOS) {
-        // iOS: download-Attribut wird oft ignoriert
-        // Öffne im neuen Tab → User speichert manuell
-        window.open(url, "_blank");
+        // iOS: Blob direkt öffnen
+        window.location.href = url;
 
-        // länger warten, sonst bricht iOS ab
+        // Mehr Delay, Safari braucht Zeit
         setTimeout(() => {
             window.URL.revokeObjectURL(url);
-        }, 5000);
+        }, 8000);
 
         return;
     }
@@ -27,6 +27,7 @@ window.downloadFile = function (dataArray, fileName, mimeType) {
     const link = document.createElement("a");
     link.href = url;
     link.download = fileName;
+    link.rel = "noopener";
     link.style.display = "none";
 
     document.body.appendChild(link);
@@ -35,7 +36,7 @@ window.downloadFile = function (dataArray, fileName, mimeType) {
 
     setTimeout(() => {
         window.URL.revokeObjectURL(url);
-    }, 1000);
+    }, 1500);
 };
 
 
