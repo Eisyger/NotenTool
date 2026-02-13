@@ -2,6 +2,7 @@
 @inject ExcelTemplateExportService ExcelTemplateExportService
 @inject ExcelParseService ExcelParseService
 @inject JsHelper Js
+@inject RandomService Rnd
 
 <div class="container my-4">
     <div class="card shadow-sm">
@@ -15,11 +16,11 @@
                         </div>
                         <div class="card-body">
                             <div class="row text-center mb-3">
-                                <div class="col-4">
+                                <div class="col-6">
                                     <div class="fs-3 fw-bold text-primary">@_currentCourse.Students.Count</div>
                                     <small class="text-muted">Teilnehmer</small>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6">
                                     <div class="fs-3 fw-bold text-success">@_currentCourse.Exams.Count</div>
                                     <small class="text-muted">Prüfungen</small>
                                 </div>
@@ -31,6 +32,24 @@
                                 <div><strong>Datei:</strong> @_currentCourse.MetaData.FileName</div>
                                 <div><strong>Upload:</strong> @_currentCourse.MetaData.UploadDate.ToString("dd.MM.yyyy HH:mm") Uhr</div>
                                 <div><strong>Stand:</strong> @_currentCourse.MetaData.LastModifiedDate.ToString("dd.MM.yyyy HH:mm") Uhr</div>
+                                
+                                <hr/>
+                                
+                                    <button class="btn btn-primary btn-sm px-2" @onclick="DownLoadExamTemplate" disabled="@_isDownloading">
+                                        @if (_isDownloading)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                            <span>Verarbeite...</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-upload me-2"></i>
+                                            <span>Prüfungslisten...</span>
+                                        }
+                                    </button>
+                                    <div class="small text-muted">
+                                        <div>Download der Prüfungslisten mit den Teilnehmern in zufälliger Reihenfolge.</div>
+                                    </div>
                             </div>
                         </div>
                     </div>
@@ -68,29 +87,7 @@
     </div>
 </div>
 
-<div class="container my-4">
-    <div class="card shadow-sm">
-        <div class="card-body p-4">
-            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
-                <div>
-                    <h5 class="card-title mb-2">Vorlage herunterladen</h5>
-                    <p class="text-muted small mb-0">Excel-Vorlage downloaden.</p>
-                </div>
-                <button class="btn btn-primary px-4" @onclick="DownloadTemplate" disabled="@_isDownloading">
-                    @if (_isDownloading)
-                    {
-                        <span class="spinner-border spinner-border-sm me-2"></span>
-                    }
-                    else
-                    {
-                        <i class="bi bi-download me-2"></i>
-                    }
-                    Download
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 @code {
     private bool _isDownloading;
@@ -161,16 +158,22 @@
         }
     }
     
-    private async Task DownloadTemplate()
+
+    private async Task DownLoadExamTemplate()
     {
-        Console.WriteLine("Download gestartet!");
         _isDownloading = true;
+        Dictionary<string, List<Student>> examOrderStudents = [];
+
         try
         {
-            var fileBytes = ExcelTemplateExportService.GenerateTemplate();
-            var fileName = $"Prüfungs-Vorlage_{DateTime.Now:yyyy-MM-dd}.xlsx";
+            foreach (var exam in _currentCourse?.Exams ?? [])
+            {
+                var seed = exam.Name + exam.Description;
+                examOrderStudents.Add(exam.Name, Rnd.Shuffle(_currentCourse?.Students.ToList() ?? [], seed));
+            }
             
-            await Js.DownloadFileAsync(fileBytes, fileName);
+            var exportData = ExcelTemplateExportService.GenerateExamOrderTemplate(examOrderStudents);
+            await Js.DownloadFileAsync(exportData, $"Prüfungslisten.xlsx");
         }
         catch (Exception ex)
         {
@@ -181,4 +184,5 @@
             _isDownloading = false;
         }
     }
+
 }

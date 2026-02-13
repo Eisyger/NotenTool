@@ -1,5 +1,5 @@
 @page "/export"
-@inject ExcelGradesExportService Exporter
+@inject ExcelGradesExportService ExcelGradesExportService
 @inject JsHelper Js
 @inject IJSRuntime JsRuntime
 
@@ -129,9 +129,6 @@
 
     private async Task DownloadGrades()
     {
-        Console.WriteLine($"Course null? {_currentCourse is null}");
-        Console.WriteLine($"ExamResults count: {_examResults.Count}");
-
         // Validierung
         if (string.IsNullOrWhiteSpace(_examinerName))
         {
@@ -151,10 +148,10 @@
         try
         {
             // Generiere Excel-Datei
-            var excelBytes = Exporter.GetExcelFile(_currentCourse, _examResults, _examinerName);
+            var excelBytes = ExcelGradesExportService.GetExcelFile(_currentCourse, _examResults, _examinerName);
 
             // Download
-            var fileName = $"Noten-{_examinerName + "-" + _currentCourse.MetaData.FileName}.xlsx";
+            var fileName = $"Noten-{_examinerName}.xlsx";
             await Js.DownloadFileAsync(excelBytes, fileName);
 
             // Schließe Modal nach erfolgreichem Download

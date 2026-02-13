@@ -86,7 +86,7 @@
                                     <strong>@student.FirstName @student.LastName</strong>
                                 </td>
                                 <td class="text-end">
-                                    @if (grade.HasValue && grade.Value > 0)
+                                    @if (grade is > 0)
                                     {
                                     <span class="badge @GetBadgeClass(grade.Value) fs-6">
                                                         @grade.Value.ToString("0.0")@GetTendency(student.Id)
@@ -139,11 +139,11 @@
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold d-block mb-3">
-                        @if (_currentStudentGrade > 0)
+                        @if (_currentGrade > 0)
                         {
                         <span>Note:
-                                <span class="badge @GetBadgeClass(_currentStudentGrade) fs-5 ms-2">
-                                    @_currentStudentGrade.ToString("0.0")@(!string.IsNullOrEmpty(_currentStudentTendency) ? _currentStudentTendency : "")
+                                <span class="badge @GetBadgeClass(_currentGrade) fs-5 ms-2">
+                                    @_currentGrade.ToString("0.0")@(!string.IsNullOrEmpty(_currentTendency) ? _currentTendency : "")
                                 </span>
                             </span>
                         }
@@ -199,22 +199,6 @@
                     Vorheriger
                 </button>
 
-               
-                @if (_currentGrade > 0)
-                {
-                <button class="btn btn-success" @onclick="SaveGrade">
-                    <i class="bi bi-check-circle me-2"></i>
-                    Speichern
-                </button>
-                }
-                else
-                {
-                <button class="btn btn-success" disabled>
-                    <i class="bi bi-check-circle me-2"></i>
-                    Speichern
-                </button>
-                }
-
                 <button class="btn btn-outline-primary"
                         @onclick="NavigateNext">
                     Nächster
@@ -235,9 +219,7 @@ private string? _currentStudentId;
 private List<Student>? _shuffledStudents;
 
 private float _currentGrade = 0f;
-private float _currentStudentGrade = 0.0f;
 private string _currentTendency = string.Empty;
-private string _currentStudentTendency = string.Empty;
 private string _currentComment = string.Empty;
 private bool _showCommentField;
 private bool _showGradeModal;
@@ -296,19 +278,22 @@ var existingResult = _examResults.FirstOrDefault(r =>
 r.Exam.Id == CurrentExam.Id &&
 r.Student.Id == CurrentStudent.Id);
 
-_currentStudentGrade = existingResult?.Grade ?? 0f;
-_currentStudentTendency = existingResult?.Tendency ?? string.Empty;
+_currentGrade = existingResult?.Grade ?? 0f;
+_currentTendency = existingResult?.Tendency ?? string.Empty;
 _currentComment = existingResult?.Comment ?? string.Empty;
 _showCommentField = !string.IsNullOrEmpty(_currentComment);
 
 // Prüfe, ob Note bereits gespeichert ist
-_gradeSaved = existingResult != null && existingResult.Grade > 0;
+_gradeSaved = existingResult is { Grade: > 0 };
 
 }
 
 private async Task NavigatePrevious()
 {
     await SaveGrade();
+    _currentGrade = 0;
+    _currentTendency = string.Empty;
+
 if (_currentStudentIndex > 0)
 {
 _currentStudentIndex--;
@@ -321,6 +306,9 @@ LoadStudentGrade();
 private async Task NavigateNext()
 {
     await SaveGrade();
+    _currentGrade = 0;
+    _currentTendency = string.Empty;
+
 if (_shuffledStudents != null && _currentStudentIndex < _shuffledStudents.Count - 1)
 {
 _currentStudentIndex++;
@@ -329,8 +317,9 @@ LoadStudentGrade();
 }
 }
 
-private void CloseModal()
+private async Task CloseModal()
 {
+    await SaveGrade();
 _showGradeModal = false;
 _currentStudentId = null;
 }
@@ -395,11 +384,6 @@ Comment = _currentComment
 }
 
 _gradeSaved = true;
-_currentStudentGrade = _currentGrade;
-_currentStudentTendency = _currentTendency;
-_currentGrade = 0;
-_currentTendency = string.Empty;
-
 
 await UpdateStorage();
 StateHasChanged();

@@ -1,0 +1,51 @@
+@page "/vorlagen"
+@inject ExcelTemplateExportService ExcelTemplateExportService
+@inject JsHelper Js
+
+<div class="container my-4">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+                <div>
+                    <h5 class="card-title mb-2">Vorlage herunterladen</h5>
+                    <p class="text-muted small mb-0">Excel-Vorlage downloaden.</p>
+                </div>
+                <button class="btn btn-primary px-4" @onclick="DownloadTemplate" disabled="@_isDownloading">
+                    @if (_isDownloading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-download me-2"></i>
+                    }
+                    Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    private bool _isDownloading;
+   
+    private async Task DownloadTemplate()
+    {
+        Console.WriteLine("Download gestartet!");
+        _isDownloading = true;
+        try
+        {
+            var fileBytes = ExcelTemplateExportService.GenerateEmptyTemplate();
+            var fileName = "Prüfungsvorlage.xlsx";
+            
+            await Js.DownloadFileAsync(fileBytes, fileName);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            _isDownloading = false;
+        }
+    }
+}
