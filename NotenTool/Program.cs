@@ -14,5 +14,6 @@ builder.Services.AddScoped<JsHelper>();
 builder.Services.AddScoped<ExcelParseService>();
 builder.Services.AddScoped<RandomService>();
 builder.Services.AddScoped<ExcelGradesExportService>();
+builder.Services.AddBlazorDownloadFile();
 
 await builder.Build().RunAsync();

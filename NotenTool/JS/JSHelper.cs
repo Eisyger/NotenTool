@@ -1,15 +1,17 @@
 using System.Text.Json;
+using Blazor.DownloadFileFast.Interfaces;
 using Domain.Entity;
 using Microsoft.JSInterop;
 using NotenTool.DTO;
 
 namespace NotenTool.JS;
 
-public class JsHelper(IJSRuntime js)
+public class JsHelper(IJSRuntime js, IBlazorDownloadFileService downloadFileService)
 {
     public async Task DownloadFileAsync(byte[] data, string fileName)
     {
-        await js.InvokeVoidAsync("downloadFile", data, fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        await downloadFileService.DownloadFileAsync(fileName, data);
+        //await js.InvokeVoidAsync("downloadFile", data, fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
     
     public async Task<FilePickerResult?> PickFileAsync(string accept = ".xlsx")
