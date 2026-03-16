@@ -147,9 +147,19 @@
                                 <span class="text-muted">Noch keine Note vergeben</span>
                             }
                         </label>
-
+                        
                         <div class="grade-button-grid mb-3">
-                            @foreach (var grade in new[] { 1.0f, 1.5f, 2.0f, 2.5f, 3.0f, 3.5f, 4.0f, 4.5f, 5.0f, 5.5f, 6.0f })
+                                @foreach (var grade in new[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f })
+                                {
+                                    <button class="btn @(_currentGrade == grade ? "btn-primary" : "btn-outline-secondary")"
+                                            @onclick="() => { _currentGrade = grade; _gradeSaved = false; }">
+                                        @grade.ToString("0.0")
+                                    </button>
+                                }
+                        </div>
+                        
+                        <div class="grade-button-grid mb-3">
+                            @foreach (var grade in new[] { 1.5f, 2.5f, 3.5f, 4.5f, 6.0f })
                             {
                                 <button class="btn @(_currentGrade == grade ? "btn-primary" : "btn-outline-secondary")"
                                         @onclick="() => { _currentGrade = grade; _gradeSaved = false; }">
@@ -466,6 +476,7 @@
     .modal-overlay {
         background-color: rgba(0, 0, 0, 0.5);
     }
+      
 
     /* ── Student info alert in grade modal ── */
     .student-info-alert {
@@ -484,9 +495,9 @@
 
     /* ── Grade buttons ── */
     .grade-button-grid {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.4rem;
     }
 
     /* ── End-of-list modal icon ── */
