@@ -85,6 +85,11 @@
                                                 <strong>@student.FirstName @student.LastName</strong>
                                             </td>
                                             <td class="text-end">
+                                               
+                                                @if (IsStudentMarked(student))
+                                                {
+                                                    <i class="bi bi-star me-1"></i>
+                                                }
                                                 @if (grade is > 0)
                                                 {
                                                     <span class="badge @GetBadgeClass(grade.Value) fs-6">
@@ -191,15 +196,6 @@
                             </button>
                         </div>
                     </div>
-                    @code {
-                            private bool _isUserMarked;
-
-                            private void ToogleMarked()
-                            {
-                                _isUserMarked = !_isUserMarked;
-                            }
-                    }
-
                     <button class="btn btn-outline-secondary w-100 mb-2" @onclick="ToggleComment">
                         <i class="bi bi-chat-left-text me-2"></i>
                         @(_showCommentField ? "Bemerkung ausblenden" : "Bemerkung hinzufügen")
@@ -287,13 +283,14 @@
     private bool _showEndOfListModal;
     private int _currentStudentIndex;
     private bool _gradeSaved;
+    private bool _isUserMarked;
 
     private Student? CurrentStudent =>
         _currentCourse?.Students.FirstOrDefault(s => s.Id.ToString() == _currentStudentId);
 
     private Exam? CurrentExam =>
         _currentCourse?.Exams.FirstOrDefault(e => e.Id.ToString() == _currentExamId);
-
+    
     protected override async Task OnInitializedAsync()
     {
         _currentCourse = await Js.GetItemFromLocalStorageAsync<Course>();
@@ -342,10 +339,9 @@
         _currentTendency = existingResult?.Tendency ?? string.Empty;
         _showCommentField = !string.IsNullOrEmpty(_currentComment);
         _gradeSaved = existingResult is { Grade: > 0 };
-        _isUserMarked = existingResult?.Comment.StartsWith(MARKED) ?? false;
-        
-        var sb = new StringBuilder(_currentComment = existingResult?.Comment ?? string.Empty).Replace(MARKED, "");
-        _currentComment = sb.ToString();
+        _isUserMarked = existingResult?.Comment.EndsWith(MARKED) ?? false;
+        _currentComment = existingResult?.Comment ?? string.Empty;
+        _currentComment = _currentComment.Replace(MARKED, "");
     }
 
     private async Task NavigatePrevious()
@@ -459,6 +455,19 @@
 
     private string GetBadgeClass(float grade) =>
         grade > 4.5f ? "bg-danger" : "bg-success";
+    
+    private bool IsStudentMarked(Student student)
+    {
+        var examResult = _examResults.Find(e 
+            => e.Exam.Id.ToString() == _currentExamId 
+               && e.Student.Id == student.Id);
+        return examResult?.Comment.EndsWith(MARKED) ?? false;
+    }
+    
+    private void ToogleMarked()
+    {
+        _isUserMarked = !_isUserMarked;
+    }
 }
 
 <style>
