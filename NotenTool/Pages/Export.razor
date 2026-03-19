@@ -148,7 +148,7 @@
         try
         {
             // Generiere Excel-Datei
-            var excelBytes = ExcelGradesExportService.GetExcelFile(_currentCourse, _examResults, _examinerName);
+            var excelBytes = ExcelGradesExportService.GenerateGradesExcelFile(_currentCourse, _examResults, _examinerName);
 
             // Download
             var fileName = $"Noten-{_examinerName}.xlsx";

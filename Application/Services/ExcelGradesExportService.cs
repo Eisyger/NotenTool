@@ -6,17 +6,21 @@ namespace Application.Services;
 
 public class ExcelGradesExportService
 {
-    public byte[] GetExcelFile(Course course, List<ExamResult> examResults, string examiner)
+
+    public byte[] GenerateGradesExcelFile(Course course, List<ExamResult> examResults, string examiner)
     {
         // Font Suche deaktivieren für WASM
         Environment.SetEnvironmentVariable("NPOI_FONT_PATH", "");
         
         var workbook = new XSSFWorkbook();
-        var sheet = workbook.CreateSheet("Noten");
-
-        SetupHeaders(sheet);
-        FillSheet(sheet, course, examResults, examiner);
-
+        
+        foreach (var exam in course.Exams)
+        {
+            var sheet = workbook.CreateSheet(exam.Name);
+            SetupHeaders(sheet);
+            FillSheet(sheet, examResults.Where(r => r.Exam.Id == exam.Id).ToList(), examiner);
+        }
+        
         using var stream = new MemoryStream();
         workbook.Write(stream, true);
         return stream.ToArray();
@@ -51,7 +55,7 @@ public class ExcelGradesExportService
         sheet.CreateFreezePane(0, 1);
     }
 
-    private void FillSheet(ISheet sheet, Course course, List<ExamResult> examResults, string examiner)
+    private void FillSheet(ISheet sheet, List<ExamResult> examResults, string examiner)
     {
         var workbook = sheet.Workbook;
         var defaultStyle = workbook.CreateCellStyle();
