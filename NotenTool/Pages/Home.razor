@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using System.Text
 @inject JsHelper Js
 @inject RandomService Rnd
 
@@ -149,17 +150,17 @@
                         </label>
                         
                         <div class="grade-button-grid mb-3">
-                                @foreach (var grade in new[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f })
-                                {
-                                    <button class="btn @(_currentGrade == grade ? "btn-primary" : "btn-outline-secondary")"
-                                            @onclick="() => { _currentGrade = grade; _gradeSaved = false; }">
-                                        @grade.ToString("0.0")
-                                    </button>
-                                }
+                            @foreach (var grade in new[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f })
+                            {
+                                <button class="btn @(_currentGrade == grade ? "btn-primary" : "btn-outline-secondary")"
+                                        @onclick="() => { _currentGrade = grade; _gradeSaved = false; }">
+                                    @grade.ToString("0.0")
+                                </button>
+                            }
                         </div>
                         
                         <div class="grade-button-grid mb-3">
-                            @foreach (var grade in new[] { 1.5f, 2.5f, 3.5f, 4.5f, 6.0f })
+                            @foreach (var grade in new[] { 1.5f, 2.5f, 3.5f, 4.5f, 5.5f })
                             {
                                 <button class="btn @(_currentGrade == grade ? "btn-primary" : "btn-outline-secondary")"
                                         @onclick="() => { _currentGrade = grade; _gradeSaved = false; }">
@@ -168,7 +169,7 @@
                             }
                         </div>
 
-                        <div class="d-flex gap-2">
+                        <div class="grade-button-grid mb-3">
                             <button class="btn @(_currentTendency == "+" ? "btn-success" : "btn-outline-success")"
                                     @onclick='() => ToggleTendency("+")'>
                                 <i class="bi bi-plus-lg"></i>
@@ -177,8 +178,27 @@
                                     @onclick='() => ToggleTendency("-")'>
                                 <i class="bi bi-dash-lg"></i>
                             </button>
+                            <button class="btn @(_isUserMarked ? "btn-info" : "btn-outline-info")"
+                                    @onclick='ToogleMarked'>
+                                <i class="bi bi-star"></i>
+                            </button>
+                            
+                            <div></div>
+                            
+                            <button class="btn @(_currentGrade == 6.0f ? "btn-primary" : "btn-outline-secondary")"
+                                    @onclick="() => { _currentGrade = 6.0f; _gradeSaved = false; }">
+                                6.0
+                            </button>
                         </div>
                     </div>
+                    @code {
+                            private bool _isUserMarked;
+
+                            private void ToogleMarked()
+                            {
+                                _isUserMarked = !_isUserMarked;
+                            }
+                    }
 
                     <button class="btn btn-outline-secondary w-100 mb-2" @onclick="ToggleComment">
                         <i class="bi bi-chat-left-text me-2"></i>
@@ -251,6 +271,7 @@
 }
 
 @code {
+    private const string MARKED = " MARKIERT!";
     private Course? _currentCourse;
     private List<ExamResult> _examResults = [];
 
@@ -258,7 +279,7 @@
     private string? _currentStudentId;
     private List<Student>? _shuffledStudents;
 
-    private float _currentGrade = 0f;
+    private float _currentGrade;
     private string _currentTendency = string.Empty;
     private string _currentComment = string.Empty;
     private bool _showCommentField;
@@ -319,9 +340,12 @@
 
         _currentGrade = existingResult?.Grade ?? 0f;
         _currentTendency = existingResult?.Tendency ?? string.Empty;
-        _currentComment = existingResult?.Comment ?? string.Empty;
         _showCommentField = !string.IsNullOrEmpty(_currentComment);
         _gradeSaved = existingResult is { Grade: > 0 };
+        _isUserMarked = existingResult?.Comment.StartsWith(MARKED) ?? false;
+        
+        var sb = new StringBuilder(_currentComment = existingResult?.Comment ?? string.Empty).Replace(MARKED, "");
+        _currentComment = sb.ToString();
     }
 
     private async Task NavigatePrevious()
@@ -400,14 +424,14 @@
         {
             existingResult.Grade = _currentGrade;
             existingResult.Tendency = _currentTendency;
-            existingResult.Comment = _currentComment;
+            existingResult.Comment = _isUserMarked ? _currentComment + MARKED: _currentComment;
         }
         else
         {
             _examResults.Add(new ExamResult(CurrentExam, CurrentStudent, _currentGrade)
             {
                 Tendency = _currentTendency,
-                Comment = _currentComment
+                Comment = _isUserMarked ? _currentComment + MARKED : _currentComment
             });
         }
 
