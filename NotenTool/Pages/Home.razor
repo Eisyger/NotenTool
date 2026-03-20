@@ -196,13 +196,6 @@
                             </button>
                         </div>
                     </div>
-                    <button class="btn btn-outline-secondary w-100 mb-2" @onclick="ToggleComment">
-                        <i class="bi bi-chat-left-text me-2"></i>
-                        @(_showCommentField ? "Bemerkung ausblenden" : "Bemerkung hinzufügen")
-                    </button>
-
-                    @if (_showCommentField)
-                    {
                         <div class="mb-3">
                             <textarea class="form-control"
                                       rows="3"
@@ -210,7 +203,6 @@
                                       @bind="_currentComment"
                                       @oninput="() => _gradeSaved = false"></textarea>
                         </div>
-                    }
                 </div>
 
                 <div class="modal-footer d-flex justify-content-between">
@@ -278,7 +270,6 @@
     private float _currentGrade;
     private string _currentTendency = string.Empty;
     private string _currentComment = string.Empty;
-    private bool _showCommentField;
     private bool _showGradeModal;
     private bool _showEndOfListModal;
     private int _currentStudentIndex;
@@ -337,7 +328,6 @@
 
         _currentGrade = existingResult?.Grade ?? 0f;
         _currentTendency = existingResult?.Tendency ?? string.Empty;
-        _showCommentField = !string.IsNullOrEmpty(_currentComment);
         _gradeSaved = existingResult is { Grade: > 0 };
         _isUserMarked = existingResult?.Comment.EndsWith(MARKED) ?? false;
         _currentComment = existingResult?.Comment ?? string.Empty;
@@ -399,8 +389,6 @@
             r.Student.Id == studentId);
         return examResult?.Tendency ?? string.Empty;
     }
-
-    private void ToggleComment() => _showCommentField = !_showCommentField;
 
     private void ToggleTendency(string tendency)
     {
