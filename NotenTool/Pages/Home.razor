@@ -394,6 +394,7 @@
     {
         _currentTendency = _currentTendency == tendency ? string.Empty : tendency;
         _gradeSaved = false;
+        StateHasChanged();
     }
 
     private async Task SaveGrade()
@@ -456,6 +457,7 @@
     {
         _isUserMarked = !_isUserMarked;
         _gradeSaved = false;
+        StateHasChanged();
     }
 }
 
