@@ -175,20 +175,17 @@
                         </div>
 
                         <div class="grade-button-grid mb-3">
-                            <button @key="@($"btn-plus-{_currentTendency}")"
-                                    class="btn @(_currentTendency == "+" ? "btn-success" : "btn-outline-success")"
+                            <button class="btn @(_currentTendency == "+" ? "btn-success" : "btn-outline-success")"
                                     @onclick='() => ToggleTendency("+")'>
                                 <i class="bi bi-plus-lg"></i>
                             </button>
 
-                            <button @key="@($"btn-minus-{_currentTendency}")"
-                                    class="btn @(_currentTendency == "-" ? "btn-warning" : "btn-outline-warning")"
+                            <button class="btn @(_currentTendency == "-" ? "btn-warning" : "btn-outline-warning")"
                                     @onclick='() => ToggleTendency("-")'>
                                 <i class="bi bi-dash-lg"></i>
                             </button>
 
-                            <button @key="@($"btn-marked-{_isUserMarked}")"
-                                    class="btn @(_isUserMarked ? "btn-info" : "btn-outline-info")"
+                            <button class="btn @(_isUserMarked ? "btn-info" : "btn-outline-info")"
                                     @onclick='() => ToogleMarked()'>
                                 <i class="bi bi-star"></i>
                             </button>
@@ -558,4 +555,19 @@
         0%   { background-color: white; }
         100% { background-color: honeydew; }
     }
+
+    .btn-outline-success:focus,
+    .btn-outline-success:focus-visible,
+    .btn-outline-success:active,
+    .btn-outline-warning:focus,
+    .btn-outline-warning:focus-visible,
+    .btn-outline-warning:active,
+    .btn-outline-info:focus,
+    .btn-outline-info:focus-visible,
+    .btn-outline-info:active {
+        background-color: transparent !important;
+        box-shadow: none !important;
+        color: inherit !important;
+    }
+    
 </style>
