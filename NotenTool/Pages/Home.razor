@@ -142,10 +142,15 @@
                         <label class="form-label fw-semibold d-block mb-3">
                             @if (_currentGrade > 0)
                             {
-                                <span>Note:
-                                    <span class="badge @GetBadgeClass(_currentGrade) fs-5 ms-2">
-                                        @_currentGrade.ToString("0.0")@(!string.IsNullOrEmpty(_currentTendency) ? _currentTendency : "")
+                                <span class="d-flex justify-content-between align-items-center">
+                                    <span>Note:
+                                        <span class="badge @GetBadgeClass(_currentGrade) fs-5 ms-2">
+                                            @_currentGrade.ToString("0.0")@(!string.IsNullOrEmpty(_currentTendency) ? _currentTendency : "")
+                                        </span>
                                     </span>
+                                    <button class="btn btn-outline-danger" title="Note löschen" @onclick="() => _currentGrade = 0">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </span>
                             }
                             else
@@ -401,7 +406,7 @@
 
     private async Task SaveGrade()
     {
-        if (CurrentStudent == null || CurrentExam == null || _currentGrade == 0) return;
+        if (CurrentStudent == null || CurrentExam == null) return;
 
         var existingResult = _examResults.FirstOrDefault(r =>
             r.Exam.Id == CurrentExam.Id &&
@@ -565,6 +570,17 @@
     .btn-outline-info:focus,
     .btn-outline-info:focus-visible,
     .btn-outline-info:active {
+        background-color: transparent !important;
+        box-shadow: none !important;
+        color: inherit !important;
+        -webkit-tap-highlight-color: transparent; /* ← Touch highlight entfernen */
+        outline: none !important;                 /* ← Fokus-Ring entfernen */
+    }
+
+    /* ← Dieser Block fehlt komplett für Touch */
+    .btn-outline-success:focus:not(:focus-visible),
+    .btn-outline-warning:focus:not(:focus-visible),
+    .btn-outline-info:focus:not(:focus-visible) {
         background-color: transparent !important;
         box-shadow: none !important;
         color: inherit !important;
