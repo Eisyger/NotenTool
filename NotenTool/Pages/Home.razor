@@ -180,17 +180,17 @@
                         </div>
 
                         <div class="grade-button-grid mb-3">
-                            <button class="btn @(_currentTendency == "+" ? "btn-success" : "btn-outline-success")"
+                            <button class="btn @(_currentTendency == "+" ? "mbtn-success" : "mbtn-outline-success")"
                                     @onclick='() => ToggleTendency("+")'>
                                 <i class="bi bi-plus-lg"></i>
                             </button>
 
-                            <button class="btn @(_currentTendency == "-" ? "btn-warning" : "btn-outline-warning")"
+                            <button class="btn @(_currentTendency == "-" ? "mbtn-warning" : "mbtn-outline-warning")"
                                     @onclick='() => ToggleTendency("-")'>
                                 <i class="bi bi-dash-lg"></i>
                             </button>
 
-                            <button class="btn @(_isUserMarked ? "btn-info" : "btn-outline-info")"
+                            <button class="btn @(_isUserMarked ? "mbtn-info" : "mbtn-outline-info")"
                                     @onclick='() => ToogleMarked()'>
                                 <i class="bi bi-star"></i>
                             </button>
@@ -264,6 +264,11 @@
         </div>
     </div>
 }
+
+<!-- Video Wacke Lock -->
+<video autoplay loop muted playsinline style="display:none">
+    <source src="blank.mp4" type="video/mp4">
+</video>
 
 @code {
     private const string MARKED = " MARKIERT!";
@@ -584,6 +589,135 @@
         background-color: transparent !important;
         box-shadow: none !important;
         color: inherit !important;
+    }
+
+    .mbtn-warning {
+        --bg: #0d6efd;
+        --bg-hover: #0b5ed7;
+        --bg-active: #0a58ca;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: none;
+
+        color: black;
+        background: #ffc107;
+
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .mbtn-warning:hover {
+        background: #ffca2c;
+    }
+
+    .mbtn-warning:active {
+        background: #ffc720;
+    }
+
+    .mbtn-warning:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .mbtn-outline-warning {
+        color: #ffc107;
+        border: 1px solid #ffc107;
+        background-color: transparent;
+    }
+
+    .mbtn-outline-warning:hover {
+        color: #000;
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+
+    .mbtn-success {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: none;
+
+        color: black;
+        background: #198754;
+
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .mbtn-success:hover {
+        background: #157347;
+    }
+
+    .mbtn-success:active {
+        background: #146c43;
+    }
+
+    .mbtn-success:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+
+    .mbtn-outline-success {
+        color: #198754;
+        border: 1px solid #198754;
+        background-color: transparent;
+    }
+
+    .mbtn-outline-success:hover {
+        color: #fff;
+        background-color: #198754;
+        border-color: #198754;
+    }
+
+    .mbtn-info {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: none;
+
+        color: black;
+        background: #0dcaf0;
+
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .mbtn-info:hover {
+        background: #31d2f2;
+    }
+
+    .mbtn-info:active {
+        background: #25cff2;
+    }
+
+    .mbtn-info:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+
+    .mbtn-outline-info {
+        color: #0dcaf0;
+        border: 1px solid #0dcaf0;
+        background-color: transparent;
+    }
+
+    .mbtn-outline-info:hover {
+        color: #000;
+        background-color: #0dcaf0;
+        border-color: #0dcaf0;
     }
     
 </style>
