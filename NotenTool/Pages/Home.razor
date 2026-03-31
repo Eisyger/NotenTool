@@ -131,7 +131,14 @@
 
                 <div class="modal-body">
                     <div class="student-info-alert @(_gradeSaved ? "alert-saved" : "")">
-                        <h4><strong>@CurrentStudent.FirstName @CurrentStudent.LastName</strong></h4>
+                        <span>
+                            <h4>
+                                <strong>
+                                    @CurrentStudent.FirstName @CurrentStudent.LastName
+                                </strong>
+                            </h4>
+                           
+                        </span>
                         <small class="text-black d-block">@CurrentStudent.Club</small>
                         <small class="text-muted d-block">
                             Position: @(_currentStudentIndex + 1) / @_shuffledStudents?.Count
@@ -147,7 +154,14 @@
                                         <span class="badge @GetBadgeClass(_currentGrade) fs-5 ms-2">
                                             @_currentGrade.ToString("0.0")@(!string.IsNullOrEmpty(_currentTendency) ? _currentTendency : "")
                                         </span>
+                                        @if (_isUserMarked)
+                                        {
+                                            <span class="ms-2" title="Note markiert">
+                                                <i class="bi bi-star"></i>
+                                            </span>
+                                        }
                                     </span>
+                                    
                                     <button class="btn btn-outline-danger" title="Note löschen" @onclick="() => _currentGrade = 0">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -180,51 +194,22 @@
                         </div>
 
                         <div class="grade-button-grid mb-3">
-                            @if (_currentTendency == "+")
-                            {
-                                <button class="mbtn-success"
+                            
+                                <button class="btn btn-success"
                                         @onclick='() => ToggleTendency("+")'>
                                     <i class="bi bi-plus-lg"></i>
                                 </button>
-                            }
-                            else
-                            {
-                                <button class="mbtn-outline-success"
-                                        @onclick='() => ToggleTendency("+")'>
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                            }
-                            
-                            @if (_currentTendency == "-")
-                            {
-                                <button class="mbtn-warning"
+                          
+                                <button class="btn btn-warning"
                                         @onclick='() => ToggleTendency("-")'>
                                     <i class="bi bi-dash-lg"></i>
                                 </button>
-                            }
-                            else
-                            {
-                                <button class="mbtn-outline-warning"
-                                        @onclick='() => ToggleTendency("-")'>
-                                    <i class="bi bi-dash-lg"></i>
-                                </button>
-                            }
-                            
-                           @if (_isUserMarked)
-                            {
-                                <button class="mbtn-info"
+                           
+                                <button class="btn btn-info"
                                         @onclick='() => ToogleMarked()'>
                                     <i class="bi bi-star"></i>
                                 </button>
-                            }
-                            else
-                            {
-                                <button class="mbtn-outline-info"
-                                        @onclick='() => ToogleMarked()'>
-                                    <i class="bi bi-star"></i>
-                                </button>
-                            }
-                            
+                          
                             <div></div>
                             
                             <button class="btn @(_currentGrade == 6.0f ? "btn-primary" : "btn-outline-secondary")"
