@@ -182,14 +182,14 @@
                         <div class="grade-button-grid mb-3">
                             @if (_currentTendency == "+")
                             {
-                                <button class="btn btn-success"
+                                <button class="mbtn-success"
                                         @onclick='() => ToggleTendency("+")'>
                                     <i class="bi bi-plus-lg"></i>
                                 </button>
                             }
                             else
                             {
-                                <button class="btn btn-outline-success"
+                                <button class="mbtn-outline-success"
                                         @onclick='() => ToggleTendency("+")'>
                                     <i class="bi bi-plus-lg"></i>
                                 </button>
@@ -197,14 +197,14 @@
                             
                             @if (_currentTendency == "-")
                             {
-                                <button class="btn btn-warning"
+                                <button class="mbtn-warning"
                                         @onclick='() => ToggleTendency("-")'>
                                     <i class="bi bi-dash-lg"></i>
                                 </button>
                             }
                             else
                             {
-                                <button class="btn btn-outline-warning"
+                                <button class="mbtn-outline-warning"
                                         @onclick='() => ToggleTendency("-")'>
                                     <i class="bi bi-dash-lg"></i>
                                 </button>
@@ -212,19 +212,21 @@
                             
                            @if (_isUserMarked)
                             {
-                                <button class="btn btn-info"
+                                <button class="mbtn-info"
                                         @onclick='() => ToogleMarked()'>
                                     <i class="bi bi-star"></i>
                                 </button>
                             }
                             else
                             {
-                                <button class="btn btn-outline-info"
+                                <button class="mbtn-outline-info"
                                         @onclick='() => ToogleMarked()'>
                                     <i class="bi bi-star"></i>
                                 </button>
                             }
-
+                            
+                            <div></div>
+                            
                             <button class="btn @(_currentGrade == 6.0f ? "btn-primary" : "btn-outline-secondary")"
                                     @onclick="() => { _currentGrade = 6.0f; _gradeSaved = false; }">
                                 6.0
@@ -654,6 +656,9 @@
         color: #ffc107;
         border: 1px solid #ffc107;
         background-color: transparent;
+
+        padding: 0.5rem 1rem;
+        border-radius: 8px;       
     }
 
     .mbtn-outline-warning:hover {
@@ -698,6 +703,9 @@
         color: #198754;
         border: 1px solid #198754;
         background-color: transparent;
+
+        padding: 0.5rem 1rem;
+        border-radius: 8px;        
     }
 
     .mbtn-outline-success:hover {
@@ -742,6 +750,9 @@
         color: #0dcaf0;
         border: 1px solid #0dcaf0;
         background-color: transparent;
+
+        padding: 0.5rem 1rem;
+        border-radius: 8px;   
     }
 
     .mbtn-outline-info:hover {
