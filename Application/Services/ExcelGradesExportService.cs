@@ -7,7 +7,7 @@ namespace Application.Services;
 public class ExcelGradesExportService
 {
 
-    public byte[] GenerateGradesExcelFile(Course course, List<ExamResult> examResults, string examiner)
+    public static byte[] GetFile(Course course, List<ExamResult> examResults, string examiner)
     {
         // Font Suche deaktivieren für WASM
         Environment.SetEnvironmentVariable("NPOI_FONT_PATH", "");
@@ -26,9 +26,9 @@ public class ExcelGradesExportService
         return stream.ToArray();
     }
 
-    private void SetupHeaders(ISheet sheet)
+    private static void SetupHeaders(ISheet sheet)
     {
-        var headers = new[] { "Prüfungsname", "Beschreibung", "Teilnehmer", "Verein", "Note", "Prüfer", "Bemerkung" };
+        var headers = new[] { "Vorname", "Nachname", "Note", "Tendenz", "Prüfer", "Bemerkung", "Markiert", "Verein" };
         var workbook = sheet.Workbook;
         var headerStyle = workbook.CreateCellStyle();
 
@@ -42,9 +42,9 @@ public class ExcelGradesExportService
         
         headerStyle.Alignment = HorizontalAlignment.Center;
         headerStyle.VerticalAlignment = VerticalAlignment.Center;
-
+        
         var headerRow = sheet.CreateRow(0);
-        for (int i = 0; i < headers.Length; i++)
+        for (var i = 0; i < headers.Length; i++)
         {
             var cell = headerRow.CreateCell(i);
             cell.SetCellValue(headers[i]);
@@ -55,49 +55,56 @@ public class ExcelGradesExportService
         sheet.CreateFreezePane(0, 1);
     }
 
-    private void FillSheet(ISheet sheet, List<ExamResult> examResults, string examiner)
+    private static void FillSheet(ISheet sheet, List<ExamResult> examResults, string examiner)
     {
         var workbook = sheet.Workbook;
         var defaultStyle = workbook.CreateCellStyle();
         defaultStyle.Alignment = HorizontalAlignment.Left;
         defaultStyle.VerticalAlignment = VerticalAlignment.Center;
 
-        int rowIndex = 1;
+        var rowIndex = 1;
 
         foreach (var examGroup in examResults.GroupBy(r => r.Exam.Id).OrderBy(g => g.First().Exam.Name))
         {
-            var exam = examGroup.First().Exam;
             foreach (var result in examGroup.OrderBy(r => r.Student.LastName).ThenBy(r => r.Student.FirstName))
             {
                 var row = sheet.CreateRow(rowIndex++);
+                
+                var cellFirstname = row.CreateCell(0);
+                cellFirstname.SetCellValue(result.Student.FirstName);
+                cellFirstname.CellStyle = defaultStyle;
 
-                var cellExamName = row.CreateCell(0);
-                cellExamName.SetCellValue(exam.Name);
-                cellExamName.CellStyle = defaultStyle;
+                var cellLastName = row.CreateCell(1);
+                cellLastName.SetCellValue(result.Student.LastName);
+                cellLastName.CellStyle = defaultStyle;
+                
+                var cellGrade = row.CreateCell(2);
+                if (result.Grade > 0.0f)
+                {
+                    cellGrade.SetCellValue(result.Grade);
+                    cellGrade.CellStyle = defaultStyle;
+                    cellGrade.SetCellType(CellType.Numeric);
+                }
 
-                var cellDescription = row.CreateCell(1);
-                cellDescription.SetCellValue(exam.Description);
-                cellDescription.CellStyle = defaultStyle;
-
-                var cellStudent = row.CreateCell(2);
-                cellStudent.SetCellValue($"{result.Student.FirstName} {result.Student.LastName}");
-                cellStudent.CellStyle = defaultStyle;
-
-                var cellClub = row.CreateCell(3);
-                cellClub.SetCellValue(result.Student.Club);
-                cellClub.CellStyle = defaultStyle;
-
-                var cellGrade = row.CreateCell(4);
-                cellGrade.SetCellValue($"{result.Grade:0.0}{result.Tendency}");
-                cellGrade.CellStyle = defaultStyle;
-
-                var cellExaminer = row.CreateCell(5);
+                var cellTendency= row.CreateCell(3);
+                cellTendency.SetCellValue(result.Tendency);
+                cellTendency.CellStyle = defaultStyle;
+                
+                var cellExaminer = row.CreateCell(4);
                 cellExaminer.SetCellValue(examiner);
                 cellExaminer.CellStyle = defaultStyle;
-
-                var cellComment = row.CreateCell(6);
+                
+                var cellComment = row.CreateCell(5);
                 cellComment.SetCellValue(result.Comment ?? string.Empty);
                 cellComment.CellStyle = defaultStyle;
+                
+                var cellIsMarked = row.CreateCell(6);
+                cellIsMarked.SetCellValue(result.IsMarked ? "ja" : " ");
+                cellIsMarked.CellStyle = defaultStyle;
+                
+                var cellClub = row.CreateCell(7);
+                cellClub.SetCellValue(result.Student.Club);
+                cellClub.CellStyle = defaultStyle;
             }
         }
     }

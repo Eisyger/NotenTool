@@ -101,7 +101,7 @@
 
         if(_currentCourse is null)
             return;
-
+        
         _examResults = await Js.GetItemFromLocalStorageAsync<List<ExamResult>>(_currentCourse.MetaData.FileName) ?? [];
     }
 
@@ -148,7 +148,7 @@
         try
         {
             // Generiere Excel-Datei
-            var excelBytes = ExcelGradesExportService.GenerateGradesExcelFile(_currentCourse, _examResults, _examinerName);
+            var excelBytes = ExcelGradesExportService.GetFile(_currentCourse, _examResults, _examinerName);
 
             // Download
             var fileName = $"Noten-{_examinerName}.xlsx";
