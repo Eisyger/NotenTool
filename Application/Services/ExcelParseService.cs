@@ -1,4 +1,5 @@
 using System.Globalization;
+using Application.DTO;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using Domain.Entity;
@@ -24,6 +25,99 @@ public class ExcelParseService
             
             return data;
         });
+    }
+
+    public static async Task<List<ExamResultDto>> ParseGrades(Dictionary<string, byte[]> excelTables)
+    {
+        return await Task.Run(() =>
+        {
+            Environment.SetEnvironmentVariable("NPOI_FONT_PATH", "");
+
+            var examResults = new List<ExamResultDto>();
+
+            foreach (var (examiner, bytes) in excelTables)
+            {
+                using var stream = new MemoryStream(bytes);
+                var workbook = new XSSFWorkbook(stream);
+
+                for (var i = 0; i < workbook.NumberOfSheets; i++)
+                {
+                    var sheet = workbook.GetSheetAt(i);
+                    ParseExamResults(sheet, examResults, examiner);
+                }
+            }
+
+            return examResults;
+        });
+    }
+
+    private static void ParseExamResults(ISheet? sheet, List<ExamResultDto> examResults, string examiner)
+    {
+        if (sheet is null) return;
+
+        // schneller Zugriff
+        var lookup = examResults.ToDictionary(
+            x => $"{x.FirstName}|{x.LastName}|{x.Club}",
+            x => x
+        );
+
+        for (var rowIndex = 1; rowIndex <= sheet.LastRowNum; rowIndex++)
+        {
+            var row = sheet.GetRow(rowIndex);
+            if (row == null || IsRowEmpty(row)) continue;
+
+            var firstName = GetCellValue(row.GetCell(0));
+            var lastName  = GetCellValue(row.GetCell(1));
+            var club      = GetCellValue(row.GetCell(7));
+
+            float.TryParse(
+                GetCellValue(row.GetCell(2)),
+                NumberStyles.Any,
+                CultureInfo.GetCultureInfo("de-DE"),
+                out var grade
+            );
+
+            var marked = GetCellValue(row.GetCell(6))
+                .Trim()
+                .Equals("ja", StringComparison.OrdinalIgnoreCase);
+
+            var exam = new ExamDto(
+                sheet.SheetName,
+                grade,
+                GetCellValue(row.GetCell(3)),
+                GetCellValue(row.GetCell(4)),
+                GetCellValue(row.GetCell(5)),
+                marked
+            );
+
+            var key = $"{firstName}|{lastName}|{club}";
+
+            if (lookup.TryGetValue(key, out var existing))
+            {
+                // ⚠️ record ist immutable → neue Instanz bauen
+                var updated = existing with
+                {
+                    Exam = existing.Exam.Append(exam).ToList()
+                };
+
+                // ersetzen in Liste + lookup
+                var index = examResults.IndexOf(existing);
+                examResults[index] = updated;
+                lookup[key] = updated;
+            }
+            else
+            {
+                var newEntry = new ExamResultDto(
+                    firstName,
+                    lastName,
+                    [exam],
+                    club
+                );
+
+                examResults.Add(newEntry);
+                lookup[key] = newEntry;
+            }
+        }
     }
     
     private static List<Student> ParseStudentSheet(ISheet? sheet)

@@ -7,8 +7,10 @@
         <div class="card-body p-4">
             <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
                 <div>
-                    <h5 class="card-title mb-2">Vorlage herunterladen</h5>
-                    <p class="text-muted small mb-0">Excel-Vorlage downloaden.</p>
+                    <h5 class="card-title mb-2">Vorlage Teilnehmerdaten</h5>
+                    <p class="text-muted small mb-0">Laden Sie die Excel-Vorlage herunter und tragen Sie die Teilnehmerdaten ein. 
+                        Die ausgefüllte Datei kann anschließend an weitere Prüfer verteilt und in die Anwendung importiert werden, 
+                        um die Benotung gemeinsam fortzuführen.</p>
                 </div>
                 <button class="btn btn-primary px-4" @onclick="DownloadTemplate" disabled="@_isDownloading">
                     @if (_isDownloading)

@@ -11,6 +11,8 @@ public class ExamResult(Exam exam, Student student, float grade)
     public string Comment { get; set; } = string.Empty;
     
     public bool IsMarked { get; set; } = false;
+    
+    public string Examiner { get; set; } = string.Empty;
 
     public static List<ExamResult> CreateDefault(List<Student> students, List<Exam> exams)
     {

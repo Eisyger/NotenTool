@@ -4,90 +4,540 @@
 @inject JsHelper Js
 @inject RandomService Rnd
 
-<div class="container my-4">
-    <div class="card shadow-sm">
-        <div class="card-body p-4">
-            @if (_currentCourse != null)
-            {
-                <div class="mt-1">
-                    <div class="card">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">Importierte Daten</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row text-center mb-3">
-                                <div class="col-6">
-                                    <div class="fs-3 fw-bold text-primary">@_currentCourse.Students.Count</div>
-                                    <small class="text-muted">Teilnehmer</small>
-                                </div>
-                                <div class="col-6">
-                                    <div class="fs-3 fw-bold text-success">@_currentCourse.Exams.Count</div>
-                                    <small class="text-muted">Prüfungen</small>
-                                </div>
-                            </div>
-                
-                            <hr>
-                
-                            <div class="small text-muted">
-                                <div><strong>Datei:</strong> @_currentCourse.MetaData.FileName</div>
-                                <div><strong>Upload:</strong> @_currentCourse.MetaData.UploadDate.ToString("dd.MM.yyyy HH:mm") Uhr</div>
-                                <div><strong>Stand:</strong> @_currentCourse.MetaData.LastModifiedDate.ToString("dd.MM.yyyy HH:mm") Uhr</div>
-                                
-                                <hr/>
-                                
-                                    <button class="btn btn-primary btn-sm px-2" @onclick="DownLoadExamTemplate" disabled="@_isDownloading">
-                                        @if (_isDownloading)
-                                        {
-                                            <span class="spinner-border spinner-border-sm me-2"></span>
-                                            <span>Verarbeite...</span>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-upload me-2"></i>
-                                            <span>Prüfungslisten...</span>
-                                        }
-                                    </button>
-                                    <div class="small text-muted">
-                                        <div>Download der Prüfungslisten mit den Teilnehmern in zufälliger Reihenfolge.</div>
-                                    </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-            
-            @if (!string.IsNullOrEmpty(_uploadMessage))
-            {
-                <div class="alert alert-@(_uploadSuccess ? "success" : "danger") mt-3 mb-0" role="alert">
-                    <i class="bi bi-@(_uploadSuccess ? "check-circle" : "exclamation-triangle") me-2"></i>
-                    @_uploadMessage
-                </div>
-            }
-            <div class="mt-4">
-                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
-                    <div>
-                        <h5 class="card-title mb-2">Lehrgangsdaten laden</h5>
-                        <p class="text-muted small mb-0">Excel-Datei hochladen.</p>
-                    </div>
-                    <button class="btn btn-success px-4" @onclick="UploadTemplate" disabled="@_isUploading">
-                        @if (_isUploading)
-                        {
-                            <span class="spinner-border spinner-border-sm me-2"></span>
-                            <span>Verarbeite...</span>
-                        }
-                        else
-                        {
-                            <i class="bi bi-upload me-2"></i>
-                            <span>Hochladen</span>
-                        }
-                    </button>
-                </div>
-                </div>
+<style>
+    .import-page {
+        background: #f8f9fb;
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #1a1d23;
+        margin-bottom: 0.25rem;
+    }
+
+    .page-header p {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    /* Accordion Panel */
+    .panel {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        transition: box-shadow 0.2s ease;
+    }
+
+    .panel:hover {
+        box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.1rem 1.4rem;
+        cursor: pointer;
+        user-select: none;
+        background: #fff;
+        border: none;
+        width: 100%;
+        text-align: left;
+        transition: background 0.15s ease;
+    }
+
+    .panel-header:hover {
+        background: #f9fafb;
+    }
+
+    .panel-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+
+    .panel-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .panel-icon-blue  { background: #eff6ff; color: #2563eb; }
+    .panel-icon-green { background: #f0fdf4; color: #16a34a; }
+
+    .panel-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #1a1d23;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .panel-subtitle {
+        font-size: 0.78rem;
+        color: #9ca3af;
+        margin: 0;
+        margin-top: 1px;
+    }
+
+    .panel-chevron {
+        color: #9ca3af;
+        font-size: 0.8rem;
+        transition: transform 0.25s ease;
+    }
+
+    .panel-chevron.open {
+        transform: rotate(180deg);
+    }
+
+    .panel-body {
+        border-top: 1px solid #f3f4f6;
+        padding: 1.5rem 1.4rem;
+        animation: fadeIn 0.2s ease;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Stats Row */
+    .stats-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .stat-card {
+        flex: 1;
+        background: #f8f9fb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 0.9rem 1rem;
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.2rem;
+    }
+
+    .stat-number.blue  { color: #2563eb; }
+    .stat-number.green { color: #16a34a; }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        font-weight: 500;
+    }
+
+    /* Meta Info */
+    .meta-info {
+        background: #f8f9fb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .meta-row {
+        display: flex;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-bottom: 0.2rem;
+    }
+
+    .meta-row:last-child { margin-bottom: 0; }
+
+    .meta-row strong {
+        color: #374151;
+        min-width: 52px;
+    }
+
+    /* Divider */
+    .divider {
+        border: none;
+        border-top: 1px solid #f3f4f6;
+        margin: 1.25rem 0;
+    }
+
+    /* Import Section */
+    .import-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .import-section-text h6 {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #1a1d23;
+        margin: 0 0 0.2rem 0;
+    }
+
+    .import-section-text p {
+        font-size: 0.8rem;
+        color: #9ca3af;
+        margin: 0;
+    }
+
+    /* Buttons */
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 1.1rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.15s ease, transform 0.1s ease;
+        white-space: nowrap;
+    }
+
+    .btn-action:hover:not(:disabled) {
+        opacity: 0.88;
+        transform: translateY(-1px);
+    }
+
+    .btn-action:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-primary-action { background: #2563eb; color: #fff; }
+    .btn-success-action { background: #16a34a; color: #fff; }
+    .btn-outline-action {
+        background: #fff;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+
+    /* Download Button Row */
+    .download-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .download-desc {
+        font-size: 0.78rem;
+        color: #9ca3af;
+        flex: 1;
+        min-width: 160px;
+    }
+
+    /* Alert */
+    .alert-custom {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.83rem;
+        margin-top: 1rem;
+    }
+
+    .alert-success-custom { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .alert-danger-custom  { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+    /* Merge Panel */
+    .merge-drop-zone {
+        border: 2px dashed #d1d5db;
+        border-radius: 10px;
+        padding: 1.5rem 1rem;
+        text-align: center;
+        color: #9ca3af;
+        font-size: 0.83rem;
+        transition: border-color 0.2s, background 0.2s;
+        margin-bottom: 1rem;
+    }
+
+    .merge-drop-zone i {
+        font-size: 1.6rem;
+        display: block;
+        margin-bottom: 0.4rem;
+        color: #d1d5db;
+    }
+
+    .merge-file-list {
+        list-style: none;
+        margin: 0 0 1rem 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .merge-file-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f8f9fb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 0.55rem 0.85rem;
+        font-size: 0.82rem;
+        color: #374151;
+        animation: fadeIn 0.18s ease;
+    }
+
+    .merge-file-item-left {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        overflow: hidden;
+    }
+
+    .merge-file-item-left i {
+        color: #16a34a;
+        flex-shrink: 0;
+    }
+
+    .merge-file-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .merge-file-remove {
+        background: none;
+        border: none;
+        color: #d1d5db;
+        cursor: pointer;
+        padding: 0.1rem 0.25rem;
+        border-radius: 4px;
+        line-height: 1;
+        flex-shrink: 0;
+        transition: color 0.15s;
+    }
+
+    .merge-file-remove:hover {
+        color: #ef4444;
+    }
+
+    .merge-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .merge-count {
+        font-size: 0.78rem;
+        color: #9ca3af;
+        margin-left: auto;
+    }
+</style>
+
+<div class="import-page">
+    <div class="container" style="max-width: 720px;">
+
+        <div class="page-header">
+            <h1>Import & Verwaltung</h1>
+            <p>Lehrgangsdaten importieren und Prüfungslisten verwalten</p>
         </div>
+
+        <!-- Panel 1: Prüfungen -->
+        <div class="panel">
+            <button class="panel-header" type="button" @onclick="() => TogglePanel(1)">
+                <div class="panel-header-left">
+                    <div class="panel-icon panel-icon-blue">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                    </div>
+                    <div>
+                        <p class="panel-title">Prüfungen</p>
+                        <p class="panel-subtitle">Lehrgangsdaten importieren &amp; Prüfungslisten herunterladen</p>
+                    </div>
+                </div>
+                <i class="bi bi-chevron-down panel-chevron @(_openPanel == 1 ? "open" : "")"></i>
+            </button>
+
+            @if (_openPanel == 1)
+            {
+                <div class="panel-body">
+
+                    @if (_currentCourse != null)
+                    {
+                        <div class="stats-row">
+                            <div class="stat-card">
+                                <div class="stat-number blue">@_currentCourse.Students.Count</div>
+                                <div class="stat-label">Teilnehmer</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number green">@_currentCourse.Exams.Count</div>
+                                <div class="stat-label">Prüfungen</div>
+                            </div>
+                        </div>
+
+                        <div class="meta-info">
+                            <div class="meta-row"><strong>Datei</strong> @_currentCourse.MetaData.FileName</div>
+                            <div class="meta-row"><strong>Upload</strong> @_currentCourse.MetaData.UploadDate.ToString("dd.MM.yyyy HH:mm") Uhr</div>
+                            <div class="meta-row"><strong>Stand</strong> @_currentCourse.MetaData.LastModifiedDate.ToString("dd.MM.yyyy HH:mm") Uhr</div>
+                        </div>
+
+                        <div class="download-row">
+                            <button class="btn-action btn-primary-action" @onclick="DownLoadExamTemplate" disabled="@_isDownloading">
+                                @if (_isDownloading)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <span>Verarbeite…</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-download"></i>
+                                    <span>Prüfungslisten</span>
+                                }
+                            </button>
+                            <span class="download-desc">
+                                Lädt alle Prüfungslisten mit Teilnehmern in zufälliger Reihenfolge als Excel-Datei herunter.
+                            </span>
+                        </div>
+
+                        <hr class="divider" />
+                    }
+
+                    <div class="import-section">
+                        <div class="import-section-text">
+                            <h6>Lehrgangsdaten importieren</h6>
+                            <p>Excel-Vorlage mit allen Teilnehmerdaten einlesen</p>
+                        </div>
+                        <button class="btn-action btn-success-action" @onclick="UploadTemplate" disabled="@_isUploading">
+                            @if (_isUploading)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                                <span>Verarbeite…</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-upload"></i>
+                                <span>Importieren</span>
+                            }
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_uploadMessage))
+                    {
+                        <div class="alert-custom @(_uploadSuccess ? "alert-success-custom" : "alert-danger-custom")">
+                            <i class="bi bi-@(_uploadSuccess ? "check-circle-fill" : "exclamation-triangle-fill")"></i>
+                            @_uploadMessage
+                        </div>
+                    }
+
+                </div>
+            }
+        </div>
+
+        <!-- Panel 2: Blanko -->
+        <div class="panel">
+            <button class="panel-header" type="button" @onclick="() => TogglePanel(2)">
+                <div class="panel-header-left">
+                    <div class="panel-icon panel-icon-green">
+                        <i class="bi bi-diagram-2"></i>
+                    </div>
+                    <div>
+                        <p class="panel-title">Notenblätter zusammenführen</p>
+                        <p class="panel-subtitle">Notenblätter aller Prüfer zusammenführen</p>
+                    </div>
+                </div>
+                <i class="bi bi-chevron-down panel-chevron @(_openPanel == 2 ? "open" : "")"></i>
+            </button>
+
+            @if (_openPanel == 2)
+            {
+                <div class="panel-body">
+
+                    @if (_mergeFiles.Count == 0)
+                    {
+                        <div class="merge-drop-zone">
+                            <i class="bi bi-file-earmark-arrow-up"></i>
+                            Noch keine Notenblätter geladen
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="merge-file-list">
+                            @foreach (var file in _mergeFiles)
+                            {
+                                <li class="merge-file-item">
+                                    <div class="merge-file-item-left">
+                                        <i class="bi bi-file-earmark-excel-fill"></i>
+                                        <span class="merge-file-name">@file.Key</span>
+                                    </div>
+                                    <button class="merge-file-remove" type="button" title="Entfernen"
+                                            @onclick="() => RemoveMergeFile(file.Key)">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    <div class="merge-actions">
+                        <button class="btn-action btn-outline-action" type="button"
+                                @onclick="AddMergeFiles" disabled="@_isMerging">
+                            <i class="bi bi-plus-lg"></i>
+                            <span>Dateien hinzufügen</span>
+                        </button>
+
+                        <button class="btn-action btn-success-action" type="button"
+                                @onclick="MergeAndDownload"
+                                disabled="@(_mergeFiles.Count < 2 || _isMerging)">
+                            @if (_isMerging)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                                <span>Zusammenführen…</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-download"></i>
+                                <span>Zusammenführen &amp; Download</span>
+                            }
+                        </button>
+
+                        @if (_mergeFiles.Count > 0)
+                        {
+                            <span class="merge-count">@_mergeFiles.Count Datei@(_mergeFiles.Count == 1 ? "" : "en") geladen</span>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_mergeMessage))
+                    {
+                        <div class="alert-custom @(_mergeSuccess ? "alert-success-custom" : "alert-danger-custom") mt-3">
+                            <i class="bi bi-@(_mergeSuccess ? "check-circle-fill" : "exclamation-triangle-fill")"></i>
+                            @_mergeMessage
+                        </div>
+                    }
+
+                </div>
+            }
+        </div>
+
     </div>
 </div>
-
-
 
 @code {
     private bool _isDownloading;
@@ -95,14 +545,27 @@
     private string _uploadMessage = string.Empty;
     private bool _uploadSuccess;
     private Course? _currentCourse;
-    
+
     private string _fileName = string.Empty;
     private DateTime _lastModifiedDate;
     private DateTime _uploadDate;
 
+    private int _openPanel = 1;
+
+    // Panel 2 – Notenblätter zusammenführen
+    private Dictionary<string, byte[]> _mergeFiles = [];
+    private bool _isMerging;
+    private string _mergeMessage = string.Empty;
+    private bool _mergeSuccess;
+
     protected override async Task OnInitializedAsync()
     {
         _currentCourse = await Js.GetItemFromLocalStorageAsync<Course>();
+    }
+
+    private void TogglePanel(int panelNumber)
+    {
+        _openPanel = _openPanel == panelNumber ? 0 : panelNumber;
     }
 
     private async Task UploadTemplate()
@@ -111,23 +574,23 @@
         _uploadMessage = string.Empty;
         _uploadSuccess = false;
         _currentCourse = null;
-        
+
         try
         {
             var filePickerResult = await Js.PickFileAsync();
-            
+
             if (filePickerResult is null || filePickerResult.GetBytes().Length == 0)
             {
                 _uploadMessage = "Keine Datei ausgewählt.";
                 _uploadSuccess = false;
                 return;
             }
-            
+
             var fileBytes = filePickerResult.GetBytes();
             _fileName = filePickerResult.FileName;
             _lastModifiedDate = filePickerResult.LastModifiedDate;
             _uploadDate = filePickerResult.UploadDate;
-            
+
             using var memoryStream = new MemoryStream(fileBytes);
             _currentCourse = await ExcelParseService.ParseTemplate(memoryStream);
             _currentCourse.MetaData = new CourseMetaData()
@@ -136,13 +599,13 @@
                 LastModifiedDate = _lastModifiedDate,
                 UploadDate = _uploadDate
             };
-            
+
             _uploadMessage = "Datei erfolgreich hochgeladen und verarbeitet!";
             _uploadSuccess = true;
 
             await Js.ClearLocalStorageAsync();
             await Js.SetItemToLocalStorageAsync(_currentCourse);
-           
+
             Console.WriteLine($"Importiert: {_currentCourse.Students.Count} Teilnehmer, " +
                             $"{_currentCourse.Exams.Count} Prüfungen");
         }
@@ -158,6 +621,7 @@
         }
     }
     
+    
 
     private async Task DownLoadExamTemplate()
     {
@@ -171,7 +635,7 @@
                 var seed = exam.Name + exam.Description;
                 examOrderStudents.Add(exam.Name, Rnd.Shuffle(_currentCourse?.Students.ToList() ?? [], seed));
             }
-            
+
             var exportData = ExcelTemplateExportService.GenerateExamOrderTemplate(examOrderStudents);
             await Js.DownloadFileAsync(exportData, $"Prüfungslisten.xlsx");
         }
@@ -185,4 +649,49 @@
         }
     }
 
+    private async Task AddMergeFiles()
+    {
+        var filePickerResult = await Js.PickFileAsync();
+        if (filePickerResult is null || filePickerResult.GetBytes().Length == 0) return;
+
+        _mergeFiles.TryAdd(
+            filePickerResult.FileName
+                .Replace("Noten-", "")
+                .Replace(".xlsx",  ""),
+            filePickerResult.GetBytes());
+        
+        _mergeMessage = string.Empty;
+    }
+
+    private void RemoveMergeFile(string fileName)
+    {
+        _mergeFiles.Remove(fileName);
+        _mergeMessage = string.Empty;
+    }
+
+    private async Task MergeAndDownload()
+    {
+        _isMerging = true;
+        _mergeMessage = string.Empty;
+        _mergeSuccess = false;
+
+        try
+        {
+            var examResults = await ExcelParseService.ParseGrades(_mergeFiles);
+            var exportData = ExcelMergeExportService.GetFile(examResults);
+            await Js.DownloadFileAsync(exportData, $"Ergebnisse.xlsx");
+
+            _mergeMessage = $"{_mergeFiles.Count} Notenblätter erfolgreich zusammengeführt und heruntergeladen.";
+            _mergeSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _mergeMessage = $"Fehler beim Zusammenführen: {ex.Message}";
+            _mergeSuccess = false;
+        }
+        finally
+        {
+            _isMerging = false;
+        }
+    }
 }
