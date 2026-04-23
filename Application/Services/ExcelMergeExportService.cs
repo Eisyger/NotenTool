@@ -51,19 +51,36 @@ public class ExcelMergeExportService
         ISheet sheet,
         List<(string ExamName, List<string> Examiners)> structure)
     {
+        var headerStyle = CreateHeaderStyle(sheet.Workbook);
+        
         var row = sheet.CreateRow(0);
         var col = 0;
 
-        row.CreateCell(col++).SetCellValue("Vorname");
-        row.CreateCell(col++).SetCellValue("Nachname");
+        var firstCol = row.CreateCell(col++);
+        firstCol.CellStyle = headerStyle;
+        firstCol.SetCellValue("Vorname");
+        sheet.SetColumnWidth(col-1, ("Vorname".Length + 2) * 256);
+
+        var secondCol = row.CreateCell(col++);
+        secondCol.CellStyle = headerStyle;
+        secondCol.SetCellValue("Nachname");
+        sheet.SetColumnWidth(col-1, ("Nachname".Length + 2) * 256);
 
         foreach (var exam in structure)
         {
-            row.CreateCell(col++).SetCellValue(exam.ExamName);
+            var examCol = row.CreateCell(col++);
+            examCol.CellStyle = headerStyle;
+            examCol.SetCellValue(exam.ExamName);
+            
+            sheet.SetColumnWidth(col-1, (exam.ExamName.Length + 2) * 256);
 
             foreach (var examiner in exam.Examiners)
             {
-                row.CreateCell(col++).SetCellValue(examiner);
+                var examinerCol = row.CreateCell(col++);
+                examinerCol.CellStyle = headerStyle;
+                examinerCol.SetCellValue(examiner);
+                
+                sheet.SetColumnWidth(col-1, (examiner.Length + 2) * 256);
             }
         }
 
@@ -76,6 +93,7 @@ public class ExcelMergeExportService
         List<(string ExamName, List<string> Examiners)> structure)
     {
         var numericStyle = sheet.Workbook.CreateCellStyle();
+        
         numericStyle.Alignment = HorizontalAlignment.Left;
         numericStyle.VerticalAlignment = VerticalAlignment.Center;
 
@@ -109,11 +127,35 @@ public class ExcelMergeExportService
 
                     if (lookup.TryGetValue((exam.ExamName, examiner), out var e))
                     {
-                        cell.SetCellValue(e.Grade);
-                        cell.CellStyle = numericStyle;
+                        if (e.Grade > 0.0f)
+                        {
+                            cell.SetCellValue(e.Grade);
+                            cell.CellStyle = numericStyle;
+                        }
                     }
                 }
             }
         }
+    }
+    
+    private static ICellStyle CreateHeaderStyle(IWorkbook workbook)
+    {
+        var style = workbook.CreateCellStyle();
+        
+        // Background color
+        style.FillForegroundColor = IndexedColors.CornflowerBlue.Index;
+        style.FillPattern = FillPattern.SolidForeground;
+        
+        // Border
+        style.BorderTop = BorderStyle.Thin;
+        style.BorderBottom = BorderStyle.Thin;
+        style.BorderLeft = BorderStyle.Thin;
+        style.BorderRight = BorderStyle.Thin;
+        
+        // Alignment
+        style.Alignment = HorizontalAlignment.Center;
+        style.VerticalAlignment = VerticalAlignment.Center;
+        
+        return style;
     }
 }
