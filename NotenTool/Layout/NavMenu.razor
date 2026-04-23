@@ -1,54 +1,60 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">NotenTool</a>
-        <span class="navbar-brand" style="font-size: 0.7rem;">
-            v2.0
+
+        <span class="navbar-brand version">
+            v3.0
         </span>
-        
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+
+        <button title="Navigation menu"
+                class="navbar-toggler"
+                @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>
 </div>
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Noten
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="import">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Import
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="export">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Export
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="vorlagen">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Vorlagen
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="details">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Details
-            </NavLink>
-        </div>
+    <nav class="nav flex-column sidebar-nav">
+
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <i class="bi bi-journal-text"></i>
+            <span>Noten</span>
+        </NavLink>
+
+        <NavLink class="nav-link" href="import">
+            <i class="bi bi-file-earmark-arrow-up"></i>
+            <span>Import</span>
+        </NavLink>
+
+        <NavLink class="nav-link" href="export">
+            <i class="bi bi-file-earmark-arrow-down"></i>
+            <span>Export</span>
+        </NavLink>
+
+        <NavLink class="nav-link" href="vorlagen">
+            <i class="bi bi-collection"></i>
+            <span>Vorlagen</span>
+        </NavLink>
+
+        <NavLink class="nav-link" href="merge">
+            <i class="bi bi-arrow-left-right"></i>
+            <span>Zusammenführen</span>
+        </NavLink>
+
+        <NavLink class="nav-link" href="details">
+            <i class="bi bi-info-circle"></i>
+            <span>Details</span>
+        </NavLink>
+
     </nav>
 </div>
 
 @code {
-    private bool collapseNavMenu = true;
+    private bool _collapseNavMenu = true;
 
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private string? NavMenuCssClass => _collapseNavMenu ? "collapse" : null;
 
     private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
-
+        => _collapseNavMenu = !_collapseNavMenu;
 }

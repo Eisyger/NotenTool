@@ -2,44 +2,79 @@
 @inject ExcelTemplateExportService ExcelTemplateExportService
 @inject JsHelper Js
 
-<div class="container my-4">
-    <div class="card shadow-sm">
-        <div class="card-body p-4">
-            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
-                <div>
-                    <h5 class="card-title mb-2">Vorlage Teilnehmerdaten</h5>
-                    <p class="text-muted small mb-0">Laden Sie die Excel-Vorlage herunter und tragen Sie die Teilnehmerdaten ein. 
-                        Die ausgefüllte Datei kann anschließend an weitere Prüfer verteilt und in die Anwendung importiert werden, 
-                        um die Benotung gemeinsam fortzuführen.</p>
+<div class="import-page">
+    <div class="container" style="max-width: 720px;">
+
+        <div class="page-header">
+            <h1>Vorlagen</h1>
+            <p>Excel-Vorlage für Teilnehmerdaten herunterladen</p>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-header-left">
+                    <div class="panel-icon panel-icon-blue">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                    </div>
+                    <div>
+                        <p class="panel-title">Teilnehmer-Vorlage</p>
+                        <p class="panel-subtitle">
+                            Excel herunterladen, ausfüllen und zur weiteren Verarbeitung nutzen
+                        </p>
+                    </div>
                 </div>
-                <button class="btn btn-primary px-4" @onclick="DownloadTemplate" disabled="@_isDownloading">
-                    @if (_isDownloading)
-                    {
-                        <span class="spinner-border spinner-border-sm me-2"></span>
-                    }
-                    else
-                    {
-                        <i class="bi bi-download me-2"></i>
-                    }
-                    Download
-                </button>
+            </div>
+
+            <div class="panel-body">
+
+                <div class="meta-info">
+                    <div class="meta-row">
+                        Vorlage enthält alle benötigten Felder für Teilnehmer und Prüfungen.
+                    </div>
+                    <div class="meta-row">
+                        Kann an mehrere Prüfer verteilt und später wieder importiert werden.
+                    </div>
+                </div>
+
+                <div class="import-section">
+                    <div class="import-section-text">
+                        <h6>Download starten</h6>
+                        <p>Leere Excel-Vorlage herunterladen</p>
+                    </div>
+
+                    <button class="btn-action btn-primary-action"
+                            @onclick="DownloadTemplate"
+                            disabled="@_isDownloading">
+                        @if (_isDownloading)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                            <span>Erstelle…</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-download"></i>
+                            <span>Download</span>
+                        }
+                    </button>
+                </div>
+
             </div>
         </div>
+
     </div>
 </div>
+
 @code {
     private bool _isDownloading;
-   
+
     private async Task DownloadTemplate()
     {
-        Console.WriteLine("Download gestartet!");
         _isDownloading = true;
+
         try
         {
             var fileBytes = ExcelTemplateExportService.GenerateEmptyTemplate();
-            var fileName = "Prüfungsvorlage.xlsx";
-            
-            await Js.DownloadFileAsync(fileBytes, fileName);
+            await Js.DownloadFileAsync(fileBytes, "Prüfungsvorlage.xlsx");
         }
         catch (Exception ex)
         {

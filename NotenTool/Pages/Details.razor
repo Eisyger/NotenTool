@@ -1,70 +1,118 @@
 @page "/details"
 @inject JsHelper Js
 
-<div class="container my-4">
-<div class="accordion" id="detailsAccordion">
-        
-    <!-- Prüfungen -->
-    <div class="accordion-item">
-        <h2 class="accordion-header">
-            <button class="accordion-button @(_openPanel == 1 ? "" : "collapsed")"
-                    type="button"
-                    @onclick="() => TogglePanel(1)">
-                <div class="fw-semibold mb-1">Prüfungen</div>
-            </button>
-        </h2>
-        <div id="collapsePruefungen" class="accordion-collapse collapse @(_openPanel == 1 ? "show" : "")">
-            <div class="accordion-body p-0">
-                <ul class="list-group list-group-flush">
-                    @{
-                        int examIndex = 1;
-                    }
-                    @foreach (var exam in _currentCourse?.Exams ?? [])
-                    {
-                        <li class="list-group-item">
-                            <div class="text-black small">@examIndex. @exam.Name</div>
-                            <div class="text-muted small">@exam.Description</div>
-                        </li>
-                        examIndex++;
-                    }
-                </ul>
-            </div>
+<div class="import-page">
+    <div class="container" style="max-width: 720px;">
+
+        <div class="page-header">
+            <h1>Details</h1>
+            <p>Übersicht über Prüfungen und Teilnehmer</p>
         </div>
-    </div>
-</div>
-</div>
-<div class="container my-4">
-    <div class="accordion">
-        <!-- Teilnehmer -->
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="headingTeilnehmer">
-                <button class="accordion-button @(_openPanel == 3 ? "" : "collapsed")" 
-                        type="button" 
-                        @onclick="() => TogglePanel(3)">
-                    <div class="fw-semibold mb-1">Teilnehmer</div>
-                </button>
-            </h2>
-            <div id="collapseTeilnehmer" class="accordion-collapse collapse @(_openPanel == 3 ? "show" : "")">
-                <div class="accordion-body p-0">
-                    <ul class="list-group list-group-flush">
-                        @{
-                            int studentIndex = 1;
-                        }
-                        @foreach (var student in _currentCourse?.Students ?? [])
-                        {
-                            <li class="list-group-item">
-                                <div class="text-black small">@studentIndex. @student.FirstName @student.LastName</div>
-                                <div class="text-muted small mt-1">
-                                    <span class="me-3">@student.Club</span>
-                                    <span>@student.DateOfBirth.ToString("dd.MM.yyyy")</span>
-                                </div>
-                            </li>
-                            studentIndex++;
-                        }
-                    </ul>
+
+        <!-- Prüfungen -->
+        <div class="panel">
+            <button class="panel-header" type="button" @onclick="() => TogglePanel(1)">
+                <div class="panel-header-left">
+                    <div class="panel-icon panel-icon-blue">
+                        <i class="bi bi-clipboard-check"></i>
+                    </div>
+                    <div>
+                        <p class="panel-title">Prüfungen</p>
+                        <p class="panel-subtitle">Alle vorhandenen Prüfungen im Lehrgang</p>
+                    </div>
                 </div>
-            </div>
+                <i class="bi bi-chevron-down panel-chevron @(_openPanel == 1 ? "open" : "")"></i>
+            </button>
+
+            @if (_openPanel == 1)
+            {
+                <div class="panel-body">
+
+                    @if (!(_currentCourse?.Exams?.Any() ?? false))
+                    {
+                        <div class="alert-custom alert-danger-custom">
+                            Keine Prüfungen vorhanden
+                        </div>
+                    }
+                    else
+                    {
+                        int index = 1;
+
+                        <ul class="merge-file-list">
+                            @foreach (var exam in _currentCourse!.Exams)
+                            {
+                                <li class="merge-file-item">
+                                    <div class="merge-file-item-left">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                        <div>
+                                            <div class="merge-file-name">@index. @exam.Name</div>
+                                            <div class="panel-subtitle">@exam.Description</div>
+                                        </div>
+                                    </div>
+                                </li>
+                                index++;
+                            }
+                        </ul>
+                    }
+
+                </div>
+            }
         </div>
+
+        <!-- Teilnehmer -->
+        <div class="panel">
+            <button class="panel-header" type="button" @onclick="() => TogglePanel(2)">
+                <div class="panel-header-left">
+                    <div class="panel-icon panel-icon-green">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div>
+                        <p class="panel-title">Teilnehmer</p>
+                        <p class="panel-subtitle">Alle Teilnehmer im Lehrgang</p>
+                    </div>
+                </div>
+                <i class="bi bi-chevron-down panel-chevron @(_openPanel == 2 ? "open" : "")"></i>
+            </button>
+
+            @if (_openPanel == 2)
+            {
+                <div class="panel-body">
+
+                    @if (!(_currentCourse?.Students?.Any() ?? false))
+                    {
+                        <div class="alert-custom alert-danger-custom">
+                            Keine Teilnehmer vorhanden
+                        </div>
+                    }
+                    else
+                    {
+                        int index = 1;
+
+                        <ul class="merge-file-list">
+                            @foreach (var student in _currentCourse!.Students)
+                            {
+                                <li class="merge-file-item">
+                                    <div class="merge-file-item-left">
+                                        <i class="bi bi-person"></i>
+                                        <div>
+                                            <div class="merge-file-name">
+                                                @index. @student.FirstName @student.LastName
+                                            </div>
+                                            <div class="panel-subtitle">
+                                                @student.Club · @student.DateOfBirth.ToString("dd.MM.yyyy")
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                index++;
+                            }
+                        </ul>
+                    }
+
+                </div>
+            }
+        </div>
+
     </div>
 </div>
 

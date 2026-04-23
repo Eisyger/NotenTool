@@ -1,0 +1,117 @@
+@page "/merge"
+
+@inject JsHelper Js
+
+<div class="import-page">
+    <div class="container" style="max-width: 720px;">
+
+        <div class="page-header">
+            <h1>Zusammenführen</h1>
+            <p>Notenblätter zusammenführen</p>
+        </div>
+        
+        <div class="panel">
+            <div class="panel-body">
+
+                @if (_files.Count == 0)
+                {
+                    <div class="merge-drop-zone">
+                        Keine Dateien
+                    </div>
+                }
+                else
+                {
+                    <ul class="merge-file-list">
+                        @foreach (var f in _files)
+                        {
+                            <li class="merge-file-item">
+                                <div class="merge-file-item-left">
+                                    <i class="bi bi-file-earmark-excel-fill"></i>
+                                    <span class="merge-file-name">@f.Key</span>
+                                </div>
+
+                                <button class="merge-file-remove"
+                                        @onclick="() => Remove(f.Key)">
+                                    ✕
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                <div class="merge-actions">
+                    <button class="btn-action btn-outline-action"
+                            @onclick="Add">
+                        Datei auswählen
+                    </button>
+
+                    <button class="btn-action btn-success-action"
+                            @onclick="MergeFiles"
+                            disabled="@(_files.Count < 2 || _busy)">
+                        @(_busy ? "..." : "Zusammenführen")
+                    </button>
+
+                    <span class="merge-count">
+                        @_files.Count Dateien
+                    </span>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_msg))
+                {
+                    <div class="alert-custom @( _ok ? "alert-success-custom" : "alert-danger-custom")">
+                        @_msg
+                    </div>
+                }
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private Dictionary<string, byte[]> _files = [];
+    private bool _busy;
+
+    private string _msg = "";
+    private bool _ok;
+
+    private async Task Add()
+    {
+        var file = await Js.PickFileAsync();
+        if (file is null) return;
+
+        _files[file.FileName] = file.GetBytes();
+    }
+
+    private void Remove(string key)
+    {
+        _files.Remove(key);
+    }
+
+    private async Task MergeFiles()
+    {
+        _busy = true;
+        _msg = "";
+
+        try
+        {
+            var data = await ExcelParseService.ParseGrades(_files);
+            var file = ExcelMergeExportService.GetFile(data);
+
+            await Js.DownloadFileAsync(file, "Ergebnisse.xlsx");
+
+            _msg = "OK";
+            _ok = true;
+        }
+        catch (Exception ex)
+        {
+            _msg = ex.Message;
+            _ok = false;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
